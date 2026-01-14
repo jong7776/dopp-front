@@ -1,19 +1,38 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
-import Dashboard from './pages/Dashboard'
-import Transactions from './pages/Transactions'
-import Reports from './pages/Reports'
+import ProtectedRoute from './components/ProtectedRoute'
+import Dashboard from './pages/dashboard/Dashboard'
+import Expense from './pages/expense/Expense'
+import Login from './pages/auth/Login'
+import { isAuthenticated } from './utils/auth'
 
 function App() {
   return (
     <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/reports" element={<Reports />} />
-        </Routes>
-      </Layout>
+      <Routes>
+        {/* 로그인 페이지 - 로그인된 상태면 대시보드로 리다이렉트 */}
+        <Route
+          path="/login"
+          element={
+            isAuthenticated() ? <Navigate to="/" replace /> : <Login />
+          }
+        />
+        
+        {/* 보호된 라우트 - 로그인 필요 */}
+        <Route
+          path="/*"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/expense" element={<Expense />} />
+                </Routes>
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
     </Router>
   )
 }

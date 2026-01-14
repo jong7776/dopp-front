@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { ReactNode, useState, useEffect } from 'react'
+import { logout, refreshAccessToken } from '../utils/api'
 
 interface LayoutProps {
   children: ReactNode
@@ -19,19 +20,10 @@ const Layout = ({ children }: LayoutProps) => {
   const navItems: NavItem[] = [
     { path: '/', label: '대시보드', icon: '📊' },
     {
-      label: '거래 관리',
+      label: '비용 관리',
       icon: '💰',
       children: [
-        { path: '/transactions', label: '매출/매입 목록', icon: '📋' },
-      ],
-    },
-    {
-      label: '보고서',
-      icon: '📈',
-      children: [
-        { path: '/reports', label: '보고서 목록', icon: '📊' },
-        { path: '/reports/monthly', label: '월별 보고서', icon: '📅' },
-        { path: '/reports/annual', label: '연간 보고서', icon: '📆' },
+        { path: '/expense', label: '경비 관리', icon: '📋' },
       ],
     },
   ]
@@ -86,20 +78,36 @@ const Layout = ({ children }: LayoutProps) => {
               </h1>
             </div>
 
-            {/* Right: Login or Profile */}
-            <div className="flex items-center">
-              {/* 비로그인 상태 */}
-              <button className="text-sm font-medium text-gray-700 hover:text-gray-900">
-                로그인
+            {/* Right: Logout & Refresh Token Test */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={async () => {
+                  try {
+                    const newToken = await refreshAccessToken()
+                    if (newToken) {
+                      alert('토큰 리프레시 성공!')
+                      console.log('새 토큰:', newToken)
+                    } else {
+                      alert('토큰 리프레시 실패')
+                    }
+                  } catch (error: any) {
+                    const errorMessage = error.response?.data?.frontMessage || 
+                                       error.response?.data?.message || 
+                                       '토큰 리프레시 실패'
+                    alert(`토큰 리프레시 실패: ${errorMessage}`)
+                    console.error('토큰 리프레시 에러:', error)
+                  }
+                }}
+                className="text-sm font-medium text-blue-600 hover:text-blue-800"
+              >
+                Refresh Token 테스트
               </button>
-
-              {/* 로그인 상태일 경우 (대체)
-              <img
-                src="/profile.jpg"
-                alt="프로필"
-                className="w-8 h-8 rounded-full cursor-pointer"
-              />
-              */}
+              <button
+                onClick={() => logout()}
+                className="text-sm font-medium text-gray-700 hover:text-gray-900"
+              >
+                로그아웃
+              </button>
             </div>
 
           </div>
