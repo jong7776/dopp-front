@@ -55,6 +55,7 @@ const Expense = () => {
           title: '오류',
           text: error.message || '경비 목록 조회 실패',
           confirmButtonText: '확인',
+          confirmButtonColor: '#66bb6a',
         })
       }
     } finally {
@@ -162,10 +163,10 @@ const Expense = () => {
   const handleSave = async () => {
     if (!editingData || !editingData.expenseName.trim()) {
       Swal.fire({
-        icon: 'warning',
         title: '알림',
         text: '경비명을 입력해주세요.',
         confirmButtonText: '확인',
+        confirmButtonColor: '#66bb6a',
       })
       return
     }
@@ -178,6 +179,7 @@ const Expense = () => {
           title: '성공',
           text: '경비가 등록되었습니다.',
           confirmButtonText: '확인',
+          confirmButtonColor: '#66bb6a',
         })
       } else if (editingId !== null) {
         await updateExpense(editingId, editingData)
@@ -186,6 +188,7 @@ const Expense = () => {
           title: '성공',
           text: '경비가 수정되었습니다.',
           confirmButtonText: '확인',
+          confirmButtonColor: '#66bb6a',
         })
       }
       setEditingId(null)
@@ -197,6 +200,7 @@ const Expense = () => {
         title: '오류',
         text: error.message || '저장 실패',
         confirmButtonText: '확인',
+        confirmButtonColor: '#66bb6a',
       })
     }
   }
@@ -205,10 +209,10 @@ const Expense = () => {
   const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) {
       Swal.fire({
-        icon: 'warning',
         title: '알림',
         text: '삭제할 항목을 선택해주세요.',
         confirmButtonText: '확인',
+        confirmButtonColor: '#66bb6a',
       })
       return
     }
@@ -223,7 +227,7 @@ const Expense = () => {
       showCancelButton: true,
       confirmButtonText: '삭제',
       cancelButtonText: '취소',
-      confirmButtonColor: '#dc2626',
+      confirmButtonColor: '#66bb6a',
       cancelButtonColor: '#6b7280',
     })
 
@@ -238,6 +242,7 @@ const Expense = () => {
         title: '성공',
         text: '삭제되었습니다.',
         confirmButtonText: '확인',
+        confirmButtonColor: '#66bb6a',
       })
       fetchExpenses()
     } catch (error: any) {
@@ -254,10 +259,10 @@ const Expense = () => {
   const handleDeleteAll = async () => {
     if (expenses.length === 0) {
       Swal.fire({
-        icon: 'warning',
         title: '알림',
         text: '삭제할 항목이 없습니다.',
         confirmButtonText: '확인',
+        confirmButtonColor: '#66bb6a',
       })
       return
     }
@@ -272,7 +277,7 @@ const Expense = () => {
       showCancelButton: true,
       confirmButtonText: '삭제',
       cancelButtonText: '취소',
-      confirmButtonColor: '#dc2626',
+      confirmButtonColor: '#66bb6a',
       cancelButtonColor: '#6b7280',
     })
 
@@ -295,6 +300,7 @@ const Expense = () => {
         title: '오류',
         text: error.message || '삭제 실패',
         confirmButtonText: '확인',
+        confirmButtonColor: '#66bb6a',
       })
     }
   }
@@ -355,6 +361,7 @@ const Expense = () => {
         title: '성공',
         text: '엑셀 업로드가 완료되었습니다.',
         confirmButtonText: '확인',
+        confirmButtonColor: '#66bb6a',
       })
       fetchExpenses()
     } catch (error: any) {
@@ -378,13 +385,13 @@ const Expense = () => {
       <div className="bg-white rounded-lg shadow p-4">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <label className="text-base font-bold text-gray-700">조회 조건</label>
+            <h3 className="text-xl font-bold text-gray-700">조회 조건</h3>
             <span className="text-sm text-gray-500">(* Enter 시 조회가능합니다. )</span>
           </div>
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <label htmlFor="year-picker" className="text-sm text-gray-600 whitespace-nowrap">
-                연도:
+              <label htmlFor="year-picker" className="text-lg text-gray-600 whitespace-nowrap">
+                연도
               </label>
               <div className="relative">
                 <select
@@ -417,8 +424,8 @@ const Expense = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <label htmlFor="expense-name-filter" className="text-sm text-gray-600 whitespace-nowrap">
-                경비명:
+              <label htmlFor="expense-name-filter" className="text-lg text-gray-600 whitespace-nowrap">
+                경비명
               </label>
               <input
                 id="expense-name-filter"
@@ -431,12 +438,15 @@ const Expense = () => {
                   }
                 }}
                 placeholder="경비명을 입력하세요"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#66bb6a]"
               />
             </div>
             <button
               onClick={fetchExpenses}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm whitespace-nowrap"
+              className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none focus:ring-2 text-sm whitespace-nowrap"
+              style={{ backgroundColor: '#66bb6a' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
             >
               조회
             </button>
@@ -450,21 +460,24 @@ const Expense = () => {
           <button
             onClick={handleStartAdd}
             disabled={editingId !== null}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: '#66bb6a' }}
+            onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4caf50')}
+            onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#66bb6a')}
           >
             등록
           </button>
           <button
             onClick={handleDeleteSelected}
             disabled={selectedIds.size === 0}
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none active:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             선택삭제 ({selectedIds.size})
           </button>
           <button
             onClick={handleDeleteAll}
             disabled={expenses.length === 0}
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none active:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             전체삭제
           </button>
@@ -472,7 +485,10 @@ const Expense = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={downloadSampleExcel}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center gap-2"
+            className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none focus:ring-2 flex items-center gap-2"
+            style={{ backgroundColor: '#66bb6a' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
           >
             <svg
               className="w-5 h-5"
@@ -499,7 +515,10 @@ const Expense = () => {
           />
           <label
             htmlFor="excel-upload"
-            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer flex items-center gap-2"
+            className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none focus:ring-2 cursor-pointer flex items-center gap-2"
+            style={{ backgroundColor: '#66bb6a' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
           >
             <svg
               className="w-5 h-5"
@@ -525,7 +544,10 @@ const Expense = () => {
                 console.error('엑셀 다운로드 실패:', error)
               }
             }}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center gap-2"
+            className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none focus:ring-2 flex items-center gap-2"
+            style={{ backgroundColor: '#66bb6a' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
           >
             <svg
               className="w-5 h-5"
@@ -548,10 +570,10 @@ const Expense = () => {
       {/* 테이블 */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 table-fixed">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left">
+                <th className="px-4 py-3 text-left w-12">
                   <input
                     type="checkbox"
                     checked={selectedIds.size === expenses.length && expenses.length > 0}
@@ -559,55 +581,55 @@ const Expense = () => {
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                   경비명
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   1월
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   2월
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   3월
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   4월
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   5월
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   6월
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   7월
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   8월
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   9월
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   10월
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   11월
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   12월
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                   합계
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   등록자
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   수정자
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '140px' }}>
                   관리
                 </th>
               </tr>
@@ -632,7 +654,7 @@ const Expense = () => {
                           onChange={(e) =>
                             setEditingData({ ...editingData, expenseName: e.target.value })
                           }
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
                           placeholder="경비명"
                         />
                       </td>
@@ -649,7 +671,7 @@ const Expense = () => {
                                   [key]: Number(e.target.value) || 0,
                                 })
                               }
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right min-w-0"
                             />
                           </td>
                         )
@@ -672,17 +694,20 @@ const Expense = () => {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-500">-</td>
                       <td className="px-4 py-3 text-sm text-gray-500">-</td>
-                      <td className="px-4 py-3 text-sm">
+                      <td className="px-4 py-3 text-sm" style={{ width: '140px' }}>
                         <div className="flex gap-2">
                           <button
                             onClick={handleSave}
-                            className="text-blue-600 hover:text-blue-800"
+                            className="px-3 py-1.5 text-sm text-white rounded-md focus:outline-none active:outline-none focus:ring-2 whitespace-nowrap"
+                            style={{ backgroundColor: '#66bb6a' }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
                           >
                             저장
                           </button>
                           <button
                             onClick={handleCancelEdit}
-                            className="text-gray-600 hover:text-gray-800"
+                            className="px-3 py-1.5 text-sm text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none active:outline-none focus:ring-2 whitespace-nowrap"
                           >
                             취소
                           </button>
@@ -726,7 +751,7 @@ const Expense = () => {
                                     expenseName: e.target.value,
                                   })
                                 }
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
                               />
                             ) : (
                               <span className="text-sm text-gray-900">{expense.expenseName}</span>
@@ -747,7 +772,7 @@ const Expense = () => {
                                         [key]: Number(e.target.value) || 0,
                                       })
                                     }
-                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right min-w-0"
                                   />
                                 ) : (
                                   <span className="text-sm text-gray-900 text-right">
@@ -781,18 +806,21 @@ const Expense = () => {
                           <td className="px-4 py-3 text-sm text-gray-900">
                             {expense.updatedBy}
                           </td>
-                          <td className="px-4 py-3 text-sm">
+                          <td className="px-4 py-3 text-sm" style={{ width: '140px' }}>
                             {isEditing ? (
                               <div className="flex gap-2">
                                 <button
                                   onClick={handleSave}
-                                  className="text-blue-600 hover:text-blue-800"
+                                  className="px-3 py-1.5 text-sm text-white rounded-md focus:outline-none active:outline-none focus:ring-2 whitespace-nowrap"
+                                  style={{ backgroundColor: '#66bb6a' }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
                                 >
                                   저장
                                 </button>
                                 <button
                                   onClick={handleCancelEdit}
-                                  className="text-gray-600 hover:text-gray-800"
+                                  className="px-3 py-1.5 text-sm text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none active:outline-none focus:ring-2 whitespace-nowrap"
                                 >
                                   취소
                                 </button>
@@ -801,7 +829,10 @@ const Expense = () => {
                               <button
                                 onClick={() => handleStartEdit(expense)}
                                 disabled={editingId !== null}
-                                className="text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-1.5 text-sm text-white rounded-md focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                style={{ backgroundColor: '#66bb6a' }}
+                                onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4caf50')}
+                                onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#66bb6a')}
                               >
                                 수정
                               </button>
@@ -877,7 +908,10 @@ const Expense = () => {
             <div className="flex justify-end">
               <button
                 onClick={() => setIsErrorModalOpen(false)}
-                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none focus:ring-2"
+                style={{ backgroundColor: '#66bb6a' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
               >
                 확인
               </button>

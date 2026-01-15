@@ -76,7 +76,7 @@ const Layout = ({ children }: LayoutProps) => {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="p-2 rounded-md hover:bg-gray-100 focus:outline-none active:outline-none"
                 aria-label="메뉴 토글"
               >
                 <span className="text-2xl">☰</span>
@@ -106,13 +106,13 @@ const Layout = ({ children }: LayoutProps) => {
                     console.error('토큰 리프레시 에러:', error)
                   }
                 }}
-                className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                className="text-sm font-medium text-blue-600 hover:text-blue-800 focus:outline-none active:outline-none"
               >
                 Refresh Token 테스트
               </button>
               <button
                 onClick={() => logout()}
-                className="text-sm font-medium text-gray-700 hover:text-gray-900"
+                className="text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none active:outline-none"
               >
                 로그아웃
               </button>
@@ -144,7 +144,7 @@ const Layout = ({ children }: LayoutProps) => {
                       <>
                         <button
                           onClick={() => toggleExpand(item.label)}
-                          className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                          className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors focus:outline-none active:outline-none ${
                             isChildActiveState
                               ? 'bg-blue-50 text-blue-700 font-semibold'
                               : 'text-gray-700 hover:bg-gray-50'
