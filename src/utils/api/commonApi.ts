@@ -32,9 +32,67 @@ apiClient.interceptors.request.use(
 // 응답 인터셉터 - 에러 처리
 apiClient.interceptors.response.use(
   (response) => {
+    // blob 응답은 JSON이 아니므로 code 체크 제외
+    if (response.data instanceof Blob) {
+      return response
+    }
+
+    // auth API는 제외하고, 다른 API에서 code가 "000000"이 아니면 에러로 처리
+    const url = response.config.url || ''
+    const isAuthApi = url.includes('/auth/')
+    
+    if (!isAuthApi && response.data?.code && response.data.code !== '000000') {
+      const errorMessage = response.data.frontMessage || response.data.message || '요청 처리 실패'
+      
+      // 커스텀 이벤트를 발생시켜 알림 모달 표시
+      window.dispatchEvent(
+        new CustomEvent('api-error', {
+          detail: { message: errorMessage },
+        })
+      )
+      
+      // 에러로 처리하여 catch 블록에서 처리되도록 함
+      const error = new Error(errorMessage) as any
+      error.response = {
+        status: 200, // HTTP는 성공이지만 비즈니스 로직 에러
+        data: response.data,
+      }
+      error.isAxiosError = true
+      return Promise.reject(error)
+    }
+    
     return response
   },
   async (error: AxiosError<ApiResponse>) => {
+    // blob 응답의 에러인 경우 (엑셀 다운로드 실패 등)
+    if (error.config?.responseType === 'blob' && error.response?.data instanceof Blob) {
+      try {
+        const text = await (error.response.data as Blob).text()
+        const errorData = JSON.parse(text)
+        if (errorData.code && errorData.code !== '000000') {
+          const errorMessage = errorData.frontMessage || errorData.message || '요청 처리 실패'
+          
+          // 커스텀 이벤트를 발생시켜 알림 모달 표시
+          window.dispatchEvent(
+            new CustomEvent('api-error', {
+              detail: { message: errorMessage },
+            })
+          )
+          
+          const apiError = new Error(errorMessage) as any
+          apiError.response = {
+            status: error.response.status,
+            data: errorData,
+          }
+          apiError.isAxiosError = true
+          return Promise.reject(apiError)
+        }
+      } catch (parseError) {
+        // JSON 파싱 실패 시 일반 에러로 처리
+        return Promise.reject(error)
+      }
+    }
+
     const errorCode = error.response?.data?.code
     const originalRequest = error.config
 
@@ -90,6 +148,24 @@ apiClient.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+/**
+ * Content-Disposition 헤더에서 파일명 추출
+ */
+export const getFileNameFromHeader = (contentDisposition: string | null): string | null => {
+  if (!contentDisposition) return null
+  
+  const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+  if (fileNameMatch && fileNameMatch[1]) {
+    let fileName = fileNameMatch[1].replace(/['"]/g, '')
+    // UTF-8 인코딩된 파일명 처리 (filename*=UTF-8''...)
+    if (fileName.startsWith("UTF-8''")) {
+      fileName = decodeURIComponent(fileName.replace("UTF-8''", ''))
+    }
+    return fileName
+  }
+  return null
+}
 
 /**
  * 액세스 토큰 리프레시

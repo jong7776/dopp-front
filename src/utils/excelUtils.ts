@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import type { Expense, ExpenseRequest } from '../types/expense/expense'
+import type { ExpenseRequest } from '../types/expense/expense'
 
 /**
  * 샘플 엑셀 파일 다운로드
@@ -30,61 +30,6 @@ export const downloadSampleExcel = () => {
 
   // 파일명에 현재 날짜 포함
   const fileName = `경비_샘플_${new Date().toISOString().split('T')[0]}.xlsx`
-  XLSX.writeFile(workbook, fileName)
-}
-
-/**
- * 경비 목록 엑셀 다운로드
- */
-export const downloadExpenseListExcel = (expenses: Expense[]) => {
-  // 엑셀에 표시할 데이터 변환
-  const excelData = expenses.map((expense) => ({
-    '경비명': expense.expenseName,
-    '연도': expense.year,
-    '1월': expense.m01,
-    '2월': expense.m02,
-    '3월': expense.m03,
-    '4월': expense.m04,
-    '5월': expense.m05,
-    '6월': expense.m06,
-    '7월': expense.m07,
-    '8월': expense.m08,
-    '9월': expense.m09,
-    '10월': expense.m10,
-    '11월': expense.m11,
-    '12월': expense.m12,
-    '합계': expense.totalAmount,
-    '생성일': expense.createdAt.split('T')[0],
-    '수정일': expense.updatedAt.split('T')[0],
-  }))
-
-  const worksheet = XLSX.utils.json_to_sheet(excelData)
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, '경비목록')
-
-  // 컬럼 너비 자동 조정
-  const colWidths = [
-    { wch: 20 }, // 경비명
-    { wch: 8 },  // 연도
-    { wch: 12 }, // 1월~12월
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 12 }, // 합계
-    { wch: 12 }, // 생성일
-    { wch: 12 }, // 수정일
-  ]
-  worksheet['!cols'] = colWidths
-
-  const fileName = `경비목록_${new Date().toISOString().split('T')[0]}.xlsx`
   XLSX.writeFile(workbook, fileName)
 }
 

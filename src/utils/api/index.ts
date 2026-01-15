@@ -5,4 +5,4 @@ export { apiClient, refreshAccessToken, API_BASE_URL } from './commonApi'
 export { login, logout } from './authApi'
 
 // 경비 API
-export { getExpenseList, createExpense, updateExpense, deleteExpense, deleteExpenses } from './expenseApi'
+export { getExpenseList, createExpense, updateExpense, deleteExpense, deleteExpenses, uploadExpenseExcel, downloadExpenseExcel } from './expenseApi'

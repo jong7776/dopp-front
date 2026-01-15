@@ -1,49 +1,88 @@
-import { useState, useEffect } from 'react'
-import { getExpenseList, createExpense, updateExpense, deleteExpense, deleteExpenses } from '../../utils/api'
-import { downloadSampleExcel, downloadExpenseListExcel } from '../../utils/excelUtils'
+import { useState, useEffect, useRef } from 'react'
+import { getExpenseList, createExpense, updateExpense, deleteExpenses, uploadExpenseExcel, downloadExpenseExcel } from '../../utils/api'
+import { downloadSampleExcel } from '../../utils/excelUtils'
 import type { Expense, ExpenseRequest } from '../../types/expense/expense'
 
 const Expense = () => {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [year, setYear] = useState<number>(new Date().getFullYear())
+  const [expenseNameFilter, setExpenseNameFilter] = useState<string>('')
   const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
-  const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
-  const [formData, setFormData] = useState<ExpenseRequest>({
-    expenseName: '',
-    year: new Date().getFullYear(),
-    m01: 0,
-    m02: 0,
-    m03: 0,
-    m04: 0,
-    m05: 0,
-    m06: 0,
-    m07: 0,
-    m08: 0,
-    m09: 0,
-    m10: 0,
-    m11: 0,
-    m12: 0,
-  })
+  const [editingId, setEditingId] = useState<number | 'new' | null>(null)
+  const [editingData, setEditingData] = useState<ExpenseRequest | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string>('')
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // 목록 조회
   const fetchExpenses = async () => {
+    // 이전 요청이 있으면 취소
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    // 새로운 AbortController 생성
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
     setIsLoading(true)
     try {
-      const data = await getExpenseList(year)
-      setExpenses(data)
-      setSelectedIds(new Set())
+      const data = await getExpenseList(year, abortController.signal)
+      
+      // 요청이 취소되지 않았을 때만 상태 업데이트
+      if (!abortController.signal.aborted) {
+        // 경비명 필터 적용
+        let filteredData = data
+        if (expenseNameFilter.trim()) {
+          filteredData = data.filter((expense) =>
+            expense.expenseName.toLowerCase().includes(expenseNameFilter.toLowerCase().trim())
+          )
+        }
+        setExpenses(filteredData)
+        setSelectedIds(new Set())
+      }
     } catch (error: any) {
-      alert(error.message || '경비 목록 조회 실패')
+      // AbortError는 무시 (요청이 취소된 경우)
+      if (error.name === 'AbortError' || error.code === 'ERR_CANCELED' || abortController.signal.aborted) {
+        return
+      }
+      if (!abortController.signal.aborted) {
+        alert(error.message || '경비 목록 조회 실패')
+      }
     } finally {
-      setIsLoading(false)
+      if (!abortController.signal.aborted) {
+        setIsLoading(false)
+      }
     }
   }
 
   useEffect(() => {
     fetchExpenses()
+    
+    // cleanup 함수에서 요청 취소
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+        abortControllerRef.current = null
+      }
+    }
   }, [year])
+
+  // API 에러 이벤트 리스너
+  useEffect(() => {
+    const handleApiError = (event: Event) => {
+      const customEvent = event as CustomEvent<{ message: string }>
+      setErrorMessage(customEvent.detail.message)
+      setIsErrorModalOpen(true)
+    }
+
+    window.addEventListener('api-error', handleApiError as EventListener)
+    return () => {
+      window.removeEventListener('api-error', handleApiError as EventListener)
+    }
+  }, [])
 
   // 체크박스 선택/해제
   const handleSelect = (expenseId: number) => {
@@ -65,10 +104,10 @@ const Expense = () => {
     }
   }
 
-  // 등록 모달 열기
-  const handleOpenAddModal = () => {
-    setEditingExpense(null)
-    setFormData({
+  // 새 항목 추가 시작
+  const handleStartAdd = () => {
+    setEditingId('new')
+    setEditingData({
       expenseName: '',
       year: year,
       m01: 0,
@@ -84,13 +123,12 @@ const Expense = () => {
       m11: 0,
       m12: 0,
     })
-    setIsModalOpen(true)
   }
 
-  // 수정 모달 열기
-  const handleOpenEditModal = (expense: Expense) => {
-    setEditingExpense(expense)
-    setFormData({
+  // 수정 시작
+  const handleStartEdit = (expense: Expense) => {
+    setEditingId(expense.expenseId)
+    setEditingData({
       expenseName: expense.expenseName,
       year: expense.year,
       m01: expense.m01,
@@ -106,25 +144,31 @@ const Expense = () => {
       m11: expense.m11,
       m12: expense.m12,
     })
-    setIsModalOpen(true)
   }
 
-  // 등록/수정 저장
+  // 편집 취소
+  const handleCancelEdit = () => {
+    setEditingId(null)
+    setEditingData(null)
+  }
+
+  // 저장
   const handleSave = async () => {
-    if (!formData.expenseName.trim()) {
+    if (!editingData || !editingData.expenseName.trim()) {
       alert('경비명을 입력해주세요.')
       return
     }
 
     try {
-      if (editingExpense) {
-        await updateExpense(editingExpense.expenseId, formData)
-        alert('경비가 수정되었습니다.')
-      } else {
-        await createExpense(formData)
+      if (editingId === 'new') {
+        await createExpense(editingData)
         alert('경비가 등록되었습니다.')
+      } else if (editingId !== null) {
+        await updateExpense(editingId, editingData)
+        alert('경비가 수정되었습니다.')
       }
-      setIsModalOpen(false)
+      setEditingId(null)
+      setEditingData(null)
       fetchExpenses()
     } catch (error: any) {
       alert(error.message || '저장 실패')
@@ -177,22 +221,99 @@ const Expense = () => {
     return amount.toLocaleString()
   }
 
+  // 엑셀 업로드
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      await uploadExpenseExcel(file)
+      alert('엑셀 업로드가 완료되었습니다.')
+      fetchExpenses()
+    } catch (error: any) {
+      // 에러는 인터셉터에서 처리되므로 여기서는 추가 처리 불필요
+      console.error('엑셀 업로드 실패:', error)
+    } finally {
+      // 파일 input 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold text-gray-900">경비 관리</h2>
-        <div className="flex items-center gap-3">
-          <select
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((y) => (
-              <option key={y} value={y}>
-                {y}년
-              </option>
-            ))}
-          </select>
+      </div>
+
+      {/* 조회 필터 영역 */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <label className="text-base font-bold text-gray-700">조회 조건</label>
+            <span className="text-sm text-gray-500">(* Enter 시 조회가능합니다. )</span>
+          </div>
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <label htmlFor="year-picker" className="text-sm text-gray-600 whitespace-nowrap">
+                연도:
+              </label>
+              <div className="relative">
+                <select
+                  id="year-picker"
+                  value={year}
+                  onChange={(e) => setYear(Number(e.target.value))}
+                  className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none bg-white"
+                >
+                  {Array.from({ length: 20 }, (_, i) => new Date().getFullYear() - 10 + i).map((y) => (
+                    <option key={y} value={y}>
+                      {y}년
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                  <svg
+                    className="w-5 h-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <label htmlFor="expense-name-filter" className="text-sm text-gray-600 whitespace-nowrap">
+                경비명:
+              </label>
+              <input
+                id="expense-name-filter"
+                type="text"
+                value={expenseNameFilter}
+                onChange={(e) => setExpenseNameFilter(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    fetchExpenses()
+                  }
+                }}
+                placeholder="경비명을 입력하세요"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <button
+              onClick={fetchExpenses}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm whitespace-nowrap"
+            >
+              조회
+            </button>
+          </div>
         </div>
       </div>
 
@@ -200,8 +321,9 @@ const Expense = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button
-            onClick={handleOpenAddModal}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onClick={handleStartAdd}
+            disabled={editingId !== null}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             등록
           </button>
@@ -223,16 +345,75 @@ const Expense = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={downloadSampleExcel}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center gap-2"
           >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
             샘플 엑셀 다운로드
           </button>
-          <button
-            onClick={() => downloadExpenseListExcel(expenses)}
-            disabled={expenses.length === 0}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleExcelUpload}
+            className="hidden"
+            id="excel-upload"
+          />
+          <label
+            htmlFor="excel-upload"
+            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer flex items-center gap-2"
           >
-            목록 엑셀 다운로드
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
+            </svg>
+            엑셀 업로드
+          </label>
+          <button
+            onClick={async () => {
+              try {
+                await downloadExpenseExcel(year)
+              } catch (error: any) {
+                // 에러는 인터셉터에서 처리되므로 여기서는 추가 처리 불필요
+                console.error('엑셀 다운로드 실패:', error)
+              }
+            }}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center gap-2"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            엑셀 다운로드
           </button>
         </div>
       </div>
@@ -294,6 +475,12 @@ const Expense = () => {
                   합계
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  등록자
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  수정자
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   관리
                 </th>
               </tr>
@@ -301,150 +488,221 @@ const Expense = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={16} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={18} className="px-4 py-8 text-center text-gray-500">
                     로딩 중...
                   </td>
                 </tr>
-              ) : expenses.length === 0 ? (
-                <tr>
-                  <td colSpan={16} className="px-4 py-8 text-center text-gray-500">
-                    데이터가 없습니다.
-                  </td>
-                </tr>
               ) : (
-                expenses.map((expense) => (
-                  <tr key={expense.expenseId} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(expense.expenseId)}
-                        onChange={() => handleSelect(expense.expenseId)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{expense.expenseName}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                      {formatAmount(expense.m01)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                      {formatAmount(expense.m02)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                      {formatAmount(expense.m03)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                      {formatAmount(expense.m04)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                      {formatAmount(expense.m05)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                      {formatAmount(expense.m06)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                      {formatAmount(expense.m07)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                      {formatAmount(expense.m08)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                      {formatAmount(expense.m09)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                      {formatAmount(expense.m10)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                      {formatAmount(expense.m11)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                      {formatAmount(expense.m12)}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
-                      {formatAmount(expense.totalAmount)}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <button
-                        onClick={() => handleOpenEditModal(expense)}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        수정
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                <>
+                  {/* 새 항목 추가 행 */}
+                  {editingId === 'new' && editingData && (
+                    <tr className="bg-blue-50">
+                      <td className="px-4 py-3"></td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="text"
+                          value={editingData.expenseName}
+                          onChange={(e) =>
+                            setEditingData({ ...editingData, expenseName: e.target.value })
+                          }
+                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                          placeholder="경비명"
+                        />
+                      </td>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+                        const key = `m${String(month).padStart(2, '0')}` as keyof ExpenseRequest
+                        return (
+                          <td key={month} className="px-4 py-3">
+                            <input
+                              type="number"
+                              value={editingData[key] || 0}
+                              onChange={(e) =>
+                                setEditingData({
+                                  ...editingData,
+                                  [key]: Number(e.target.value) || 0,
+                                })
+                              }
+                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                            />
+                          </td>
+                        )
+                      })}
+                      <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
+                        {formatAmount(
+                          (editingData.m01 || 0) +
+                            (editingData.m02 || 0) +
+                            (editingData.m03 || 0) +
+                            (editingData.m04 || 0) +
+                            (editingData.m05 || 0) +
+                            (editingData.m06 || 0) +
+                            (editingData.m07 || 0) +
+                            (editingData.m08 || 0) +
+                            (editingData.m09 || 0) +
+                            (editingData.m10 || 0) +
+                            (editingData.m11 || 0) +
+                            (editingData.m12 || 0)
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">-</td>
+                      <td className="px-4 py-3 text-sm text-gray-500">-</td>
+                      <td className="px-4 py-3 text-sm">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleSave}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            저장
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="text-gray-600 hover:text-gray-800"
+                          >
+                            취소
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* 기존 데이터 행 */}
+                  {expenses.length === 0 && editingId !== 'new' ? (
+                    <tr>
+                      <td colSpan={18} className="px-4 py-8 text-center text-gray-500">
+                        데이터가 없습니다.
+                      </td>
+                    </tr>
+                  ) : (
+                    expenses.map((expense) => {
+                      const isEditing = editingId === expense.expenseId
+                      const displayData = isEditing && editingData ? editingData : expense
+
+                      return (
+                        <tr key={expense.expenseId} className={isEditing ? 'bg-blue-50' : 'hover:bg-gray-50'}>
+                          <td className="px-4 py-3">
+                            {!isEditing && (
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.has(expense.expenseId)}
+                                onChange={() => handleSelect(expense.expenseId)}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={displayData.expenseName}
+                                onChange={(e) =>
+                                  setEditingData({
+                                    ...editingData!,
+                                    expenseName: e.target.value,
+                                  })
+                                }
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm text-gray-900">{expense.expenseName}</span>
+                            )}
+                          </td>
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+                            const key = `m${String(month).padStart(2, '0')}` as keyof ExpenseRequest
+                            const value = isEditing ? (displayData as ExpenseRequest)[key] : (expense as Expense)[key]
+                            return (
+                              <td key={month} className="px-4 py-3">
+                                {isEditing ? (
+                                  <input
+                                    type="number"
+                                    value={value || 0}
+                                    onChange={(e) =>
+                                      setEditingData({
+                                        ...editingData!,
+                                        [key]: Number(e.target.value) || 0,
+                                      })
+                                    }
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                  />
+                                ) : (
+                                  <span className="text-sm text-gray-900 text-right">
+                                    {formatAmount(value as number)}
+                                  </span>
+                                )}
+                              </td>
+                            )
+                          })}
+                          <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
+                            {isEditing && editingData
+                              ? formatAmount(
+                                  (editingData.m01 || 0) +
+                                    (editingData.m02 || 0) +
+                                    (editingData.m03 || 0) +
+                                    (editingData.m04 || 0) +
+                                    (editingData.m05 || 0) +
+                                    (editingData.m06 || 0) +
+                                    (editingData.m07 || 0) +
+                                    (editingData.m08 || 0) +
+                                    (editingData.m09 || 0) +
+                                    (editingData.m10 || 0) +
+                                    (editingData.m11 || 0) +
+                                    (editingData.m12 || 0)
+                                )
+                              : formatAmount(expense.totalAmount)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {expense.createdBy}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {expense.updatedBy}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {isEditing ? (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={handleSave}
+                                  className="text-blue-600 hover:text-blue-800"
+                                >
+                                  저장
+                                </button>
+                                <button
+                                  onClick={handleCancelEdit}
+                                  className="text-gray-600 hover:text-gray-800"
+                                >
+                                  취소
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handleStartEdit(expense)}
+                                disabled={editingId !== null}
+                                className="text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                수정
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* 등록/수정 모달 */}
-      {isModalOpen && (
+      {/* 에러 알림 모달 */}
+      {isErrorModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4">
-              {editingExpense ? '경비 수정' : '경비 등록'}
-            </h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  경비명 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.expenseName}
-                  onChange={(e) => setFormData({ ...formData, expenseName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="경비명을 입력하세요"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">연도</label>
-                <input
-                  type="number"
-                  value={formData.year}
-                  onChange={(e) => setFormData({ ...formData, year: Number(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-4 gap-4">
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
-                  const key = `m${String(month).padStart(2, '0')}` as keyof ExpenseRequest
-                  return (
-                    <div key={month}>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {month}월
-                      </label>
-                      <input
-                        type="number"
-                        value={formData[key]}
-                        onChange={(e) =>
-                          setFormData({ ...formData, [key]: Number(e.target.value) || 0 })
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="0"
-                      />
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-6">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold text-red-600 mb-4">오류</h3>
+            <p className="text-gray-700 mb-6">{errorMessage}</p>
+            <div className="flex justify-end">
               <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                onClick={() => setIsErrorModalOpen(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
-                취소
-              </button>
-              <button
-                onClick={handleSave}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                저장
+                확인
               </button>
             </div>
           </div>
