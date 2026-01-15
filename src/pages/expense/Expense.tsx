@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
-import { getExpenseList, createExpense, updateExpense, deleteExpenses, uploadExpenseExcel, downloadExpenseExcel } from '../../utils/api'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { getExpenseList, createExpense, updateExpense, deleteExpenses, deleteAllExpenses, uploadExpenseExcel, downloadExpenseExcel } from '../../utils/api'
 import { downloadSampleExcel } from '../../utils/excelUtils'
 import type { Expense, ExpenseRequest } from '../../types/expense/expense'
+import Swal from 'sweetalert2'
 
 const Expense = () => {
   const [expenses, setExpenses] = useState<Expense[]>([])
@@ -49,7 +50,12 @@ const Expense = () => {
         return
       }
       if (!abortController.signal.aborted) {
-        alert(error.message || '경비 목록 조회 실패')
+        Swal.fire({
+          icon: 'error',
+          title: '오류',
+          text: error.message || '경비 목록 조회 실패',
+          confirmButtonText: '확인',
+        })
       }
     } finally {
       if (!abortController.signal.aborted) {
@@ -155,64 +161,141 @@ const Expense = () => {
   // 저장
   const handleSave = async () => {
     if (!editingData || !editingData.expenseName.trim()) {
-      alert('경비명을 입력해주세요.')
+      Swal.fire({
+        icon: 'warning',
+        title: '알림',
+        text: '경비명을 입력해주세요.',
+        confirmButtonText: '확인',
+      })
       return
     }
 
     try {
       if (editingId === 'new') {
         await createExpense(editingData)
-        alert('경비가 등록되었습니다.')
+        Swal.fire({
+          icon: 'success',
+          title: '성공',
+          text: '경비가 등록되었습니다.',
+          confirmButtonText: '확인',
+        })
       } else if (editingId !== null) {
         await updateExpense(editingId, editingData)
-        alert('경비가 수정되었습니다.')
+        Swal.fire({
+          icon: 'success',
+          title: '성공',
+          text: '경비가 수정되었습니다.',
+          confirmButtonText: '확인',
+        })
       }
       setEditingId(null)
       setEditingData(null)
       fetchExpenses()
     } catch (error: any) {
-      alert(error.message || '저장 실패')
+      Swal.fire({
+        icon: 'error',
+        title: '오류',
+        text: error.message || '저장 실패',
+        confirmButtonText: '확인',
+      })
     }
   }
 
   // 선택 삭제
   const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) {
-      alert('삭제할 항목을 선택해주세요.')
+      Swal.fire({
+        icon: 'warning',
+        title: '알림',
+        text: '삭제할 항목을 선택해주세요.',
+        confirmButtonText: '확인',
+      })
       return
     }
 
-    if (!confirm(`선택한 ${selectedIds.size}개의 항목을 삭제하시겠습니까?`)) {
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: '삭제 확인',
+      html: `<div style="text-align: center;">
+        <p>선택한 ${selectedIds.size}개의 항목을 삭제하시겠습니까?</p>
+        <p style="color: #dc2626; font-weight: bold; margin-top: 10px;">⚠️ 이 작업은 복원이 불가능합니다.</p>
+      </div>`,
+      showCancelButton: true,
+      confirmButtonText: '삭제',
+      cancelButtonText: '취소',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+    })
+
+    if (!result.isConfirmed) {
       return
     }
 
     try {
       await deleteExpenses(Array.from(selectedIds))
-      alert('삭제되었습니다.')
+      Swal.fire({
+        icon: 'success',
+        title: '성공',
+        text: '삭제되었습니다.',
+        confirmButtonText: '확인',
+      })
       fetchExpenses()
     } catch (error: any) {
-      alert(error.message || '삭제 실패')
+      Swal.fire({
+        icon: 'error',
+        title: '오류',
+        text: error.message || '삭제 실패',
+        confirmButtonText: '확인',
+      })
     }
   }
 
   // 전체 삭제
   const handleDeleteAll = async () => {
     if (expenses.length === 0) {
-      alert('삭제할 항목이 없습니다.')
+      Swal.fire({
+        icon: 'warning',
+        title: '알림',
+        text: '삭제할 항목이 없습니다.',
+        confirmButtonText: '확인',
+      })
       return
     }
 
-    if (!confirm(`전체 ${expenses.length}개의 항목을 삭제하시겠습니까?`)) {
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: '삭제 확인',
+      html: `<div style="text-align: center;">
+        <p>전체 ${expenses.length}개의 항목을 삭제하시겠습니까?</p>
+        <p style="color: #dc2626; font-weight: bold; margin-top: 10px;">⚠️ 이 작업은 복원이 불가능합니다.</p>
+      </div>`,
+      showCancelButton: true,
+      confirmButtonText: '삭제',
+      cancelButtonText: '취소',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+    })
+
+    if (!result.isConfirmed) {
       return
     }
 
     try {
-      const allIds = expenses.map((e) => e.expenseId)
-      await deleteExpenses(allIds)
-      alert('전체 삭제되었습니다.')
+      await deleteAllExpenses(year)
+      Swal.fire({
+        icon: 'success',
+        title: '성공',
+        text: '전체 삭제되었습니다.',
+        confirmButtonText: '확인',
+      })
       fetchExpenses()
     } catch (error: any) {
-      alert(error.message || '삭제 실패')
+      Swal.fire({
+        icon: 'error',
+        title: '오류',
+        text: error.message || '삭제 실패',
+        confirmButtonText: '확인',
+      })
     }
   }
 
@@ -221,6 +304,45 @@ const Expense = () => {
     return amount.toLocaleString()
   }
 
+  // 월별 합계 계산
+  const monthlyTotals = useMemo(() => {
+    const totals = {
+      m01: 0,
+      m02: 0,
+      m03: 0,
+      m04: 0,
+      m05: 0,
+      m06: 0,
+      m07: 0,
+      m08: 0,
+      m09: 0,
+      m10: 0,
+      m11: 0,
+      m12: 0,
+      total: 0,
+    }
+
+    expenses.forEach((expense) => {
+      totals.m01 += expense.m01 || 0
+      totals.m02 += expense.m02 || 0
+      totals.m03 += expense.m03 || 0
+      totals.m04 += expense.m04 || 0
+      totals.m05 += expense.m05 || 0
+      totals.m06 += expense.m06 || 0
+      totals.m07 += expense.m07 || 0
+      totals.m08 += expense.m08 || 0
+      totals.m09 += expense.m09 || 0
+      totals.m10 += expense.m10 || 0
+      totals.m11 += expense.m11 || 0
+      totals.m12 += expense.m12 || 0
+    })
+
+    totals.total = totals.m01 + totals.m02 + totals.m03 + totals.m04 + totals.m05 + totals.m06 +
+                   totals.m07 + totals.m08 + totals.m09 + totals.m10 + totals.m11 + totals.m12
+
+    return totals
+  }, [expenses])
+
   // 엑셀 업로드
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -228,7 +350,12 @@ const Expense = () => {
 
     try {
       await uploadExpenseExcel(file)
-      alert('엑셀 업로드가 완료되었습니다.')
+      Swal.fire({
+        icon: 'success',
+        title: '성공',
+        text: '엑셀 업로드가 완료되었습니다.',
+        confirmButtonText: '확인',
+      })
       fetchExpenses()
     } catch (error: any) {
       // 에러는 인터셉터에서 처리되므로 여기서는 추가 처리 불필요
@@ -683,6 +810,56 @@ const Expense = () => {
                         </tr>
                       )
                     })
+                  )}
+
+                  {/* 월별 합계 행 */}
+                  {!isLoading && expenses.length > 0 && (
+                    <tr className="bg-gray-100 border-t-2 border-gray-300">
+                      <td className="px-4 py-3"></td>
+                      <td className="px-4 py-3 font-bold text-gray-900">
+                        합계
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                        {formatAmount(monthlyTotals.m01)}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                        {formatAmount(monthlyTotals.m02)}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                        {formatAmount(monthlyTotals.m03)}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                        {formatAmount(monthlyTotals.m04)}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                        {formatAmount(monthlyTotals.m05)}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                        {formatAmount(monthlyTotals.m06)}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                        {formatAmount(monthlyTotals.m07)}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                        {formatAmount(monthlyTotals.m08)}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                        {formatAmount(monthlyTotals.m09)}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                        {formatAmount(monthlyTotals.m10)}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                        {formatAmount(monthlyTotals.m11)}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                        {formatAmount(monthlyTotals.m12)}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
+                        {formatAmount(monthlyTotals.total)}
+                      </td>
+                      <td className="px-4 py-3" colSpan={3}></td>
+                    </tr>
                   )}
                 </>
               )}

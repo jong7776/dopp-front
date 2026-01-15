@@ -16,6 +16,7 @@ interface NavItem {
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation()
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true)
 
   const navItems: NavItem[] = [
     { path: '/', label: '대시보드', icon: '📊' },
@@ -73,6 +74,13 @@ const Layout = ({ children }: LayoutProps) => {
 
             {/* Left: Logo + Title */}
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="메뉴 토글"
+              >
+                <span className="text-2xl">☰</span>
+              </button>
               <h1 className="text-2xl font-bold text-gray-900">
                 다올피플 관리 시스템
               </h1>
@@ -115,9 +123,13 @@ const Layout = ({ children }: LayoutProps) => {
       </header>
 
 
-      <div className="flex">
+      <div className="flex relative">
         {/* Sidebar */}
-        <aside className="w-64 bg-white shadow-sm min-h-[calc(100vh-4rem)]">
+        <aside
+          className={`w-64 bg-white shadow-sm min-h-[calc(100vh-4rem)] transition-transform duration-300 ease-in-out ${
+            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          } fixed lg:absolute z-30`}
+        >
           <nav className="p-4">
             <ul className="space-y-1">
               {navItems.map((item, index) => {
@@ -193,8 +205,16 @@ const Layout = ({ children }: LayoutProps) => {
           </nav>
         </aside>
 
+        {/* Sidebar Overlay (모바일용) */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
         {/* Main Content */}
-        <main className="flex-1 p-8">
+        <main className={`flex-1 p-8 transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}>
           {children}
         </main>
       </div>

@@ -133,9 +133,29 @@ export const deleteExpense = async (expenseId: number): Promise<void> => {
  * 경비 삭제 (다중)
  */
 export const deleteExpenses = async (expenseIds: number[]): Promise<void> => {
-  // 각 expenseId에 대해 순차적으로 삭제 API 호출
-  for (const expenseId of expenseIds) {
-    await deleteExpense(expenseId)
+  const response = await apiClient.post<ApiResponse<null>>(
+    '/expense/delete',
+    { expenseIds },
+    { withCredentials: true }
+  )
+  
+  if (response.data.code !== '000000') {
+    throw new Error(response.data.frontMessage || response.data.message || '경비 삭제 실패')
+  }
+}
+
+/**
+ * 경비 전체 삭제 (연도별)
+ */
+export const deleteAllExpenses = async (year: number): Promise<void> => {
+  const response = await apiClient.post<ApiResponse<null>>(
+    '/expense/delete/all',
+    { year },
+    { withCredentials: true }
+  )
+  
+  if (response.data.code !== '000000') {
+    throw new Error(response.data.frontMessage || response.data.message || '경비 전체 삭제 실패')
   }
 }
 
