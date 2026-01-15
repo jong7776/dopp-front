@@ -2,7 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import Dashboard from './pages/dashboard/Dashboard'
-import Expense from './pages/expense/Expense'
+import Expense from './pages/financial-management/Expense'
+import Contract from './pages/financial-management/Contract'
 import Login from './pages/auth/Login'
 import { isAuthenticated } from './utils/auth'
 
@@ -26,7 +27,8 @@ function App() {
               <Layout>
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
-                  <Route path="/expense" element={<Expense />} />
+                  <Route path="/financial-management/expense" element={<Expense />} />
+                  <Route path="/financial-management/contract" element={<Contract />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>

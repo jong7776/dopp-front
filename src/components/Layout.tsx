@@ -24,7 +24,8 @@ const Layout = ({ children }: LayoutProps) => {
       label: '비용 관리',
       icon: '💰',
       children: [
-        { path: '/expense', label: '경비 관리', icon: '📋' },
+        { path: '/financial-management/expense', label: '경비 관리', icon: '📋' },
+        { path: '/financial-management/contract', label: '매입/매출 관리', icon: '📋' },
       ],
     },
   ]

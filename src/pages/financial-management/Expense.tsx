@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { getExpenseList, createExpense, updateExpense, deleteExpenses, deleteAllExpenses, uploadExpenseExcel, downloadExpenseExcel } from '../../utils/api'
-import { downloadSampleExcel } from '../../utils/excelUtils'
-import type { Expense, ExpenseRequest } from '../../types/expense/expense'
+import { downloadExpenseSampleExcel } from '../../utils/excelUtils'
+import type { Expense, ExpenseRequest } from '../../types/financial-management/expense'
 import Swal from 'sweetalert2'
 
 const Expense = () => {
@@ -171,9 +171,26 @@ const Expense = () => {
       return
     }
 
+    // 양수로 입력된 월별 금액을 음수로 변환
+    const processedData: ExpenseRequest = {
+      ...editingData,
+      m01: editingData.m01 > 0 ? -editingData.m01 : editingData.m01,
+      m02: editingData.m02 > 0 ? -editingData.m02 : editingData.m02,
+      m03: editingData.m03 > 0 ? -editingData.m03 : editingData.m03,
+      m04: editingData.m04 > 0 ? -editingData.m04 : editingData.m04,
+      m05: editingData.m05 > 0 ? -editingData.m05 : editingData.m05,
+      m06: editingData.m06 > 0 ? -editingData.m06 : editingData.m06,
+      m07: editingData.m07 > 0 ? -editingData.m07 : editingData.m07,
+      m08: editingData.m08 > 0 ? -editingData.m08 : editingData.m08,
+      m09: editingData.m09 > 0 ? -editingData.m09 : editingData.m09,
+      m10: editingData.m10 > 0 ? -editingData.m10 : editingData.m10,
+      m11: editingData.m11 > 0 ? -editingData.m11 : editingData.m11,
+      m12: editingData.m12 > 0 ? -editingData.m12 : editingData.m12,
+    }
+
     try {
       if (editingId === 'new') {
-        await createExpense(editingData)
+        await createExpense(processedData)
         Swal.fire({
           icon: 'success',
           title: '성공',
@@ -182,7 +199,7 @@ const Expense = () => {
           confirmButtonColor: '#66bb6a',
         })
       } else if (editingId !== null) {
-        await updateExpense(editingId, editingData)
+        await updateExpense(editingId, processedData)
         Swal.fire({
           icon: 'success',
           title: '성공',
@@ -398,7 +415,7 @@ const Expense = () => {
                   id="year-picker"
                   value={year}
                   onChange={(e) => setYear(Number(e.target.value))}
-                  className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none bg-white"
+                  className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#66bb6a] cursor-pointer appearance-none bg-white"
                 >
                   {Array.from({ length: 20 }, (_, i) => new Date().getFullYear() - 10 + i).map((y) => (
                     <option key={y} value={y}>
@@ -484,7 +501,7 @@ const Expense = () => {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={downloadSampleExcel}
+            onClick={downloadExpenseSampleExcel}
             className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none focus:ring-2 flex items-center gap-2"
             style={{ backgroundColor: '#66bb6a' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
@@ -676,9 +693,9 @@ const Expense = () => {
                           </td>
                         )
                       })}
-                      <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
-                        {formatAmount(
-                          (editingData.m01 || 0) +
+                      <td className="px-4 py-3 text-sm font-semibold text-right">
+                        {(() => {
+                          const total = (editingData.m01 || 0) +
                             (editingData.m02 || 0) +
                             (editingData.m03 || 0) +
                             (editingData.m04 || 0) +
@@ -690,7 +707,12 @@ const Expense = () => {
                             (editingData.m10 || 0) +
                             (editingData.m11 || 0) +
                             (editingData.m12 || 0)
-                        )}
+                          return (
+                            <span className={total < 0 ? 'text-red-600' : 'text-gray-900'}>
+                              {formatAmount(total)}
+                            </span>
+                          )
+                        })()}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-500">-</td>
                       <td className="px-4 py-3 text-sm text-gray-500">-</td>
@@ -775,30 +797,41 @@ const Expense = () => {
                                     className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right min-w-0"
                                   />
                                 ) : (
-                                  <span className="text-sm text-gray-900 text-right">
+                                  <span className={`text-sm text-right ${
+                                    (value as number) < 0 ? 'text-red-600' : 'text-gray-900'
+                                  }`}>
                                     {formatAmount(value as number)}
                                   </span>
                                 )}
                               </td>
                             )
                           })}
-                          <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
-                            {isEditing && editingData
-                              ? formatAmount(
-                                  (editingData.m01 || 0) +
-                                    (editingData.m02 || 0) +
-                                    (editingData.m03 || 0) +
-                                    (editingData.m04 || 0) +
-                                    (editingData.m05 || 0) +
-                                    (editingData.m06 || 0) +
-                                    (editingData.m07 || 0) +
-                                    (editingData.m08 || 0) +
-                                    (editingData.m09 || 0) +
-                                    (editingData.m10 || 0) +
-                                    (editingData.m11 || 0) +
-                                    (editingData.m12 || 0)
+                          <td className="px-4 py-3 text-sm font-semibold text-right">
+                            {isEditing && editingData ? (
+                              (() => {
+                                const total = (editingData.m01 || 0) +
+                                  (editingData.m02 || 0) +
+                                  (editingData.m03 || 0) +
+                                  (editingData.m04 || 0) +
+                                  (editingData.m05 || 0) +
+                                  (editingData.m06 || 0) +
+                                  (editingData.m07 || 0) +
+                                  (editingData.m08 || 0) +
+                                  (editingData.m09 || 0) +
+                                  (editingData.m10 || 0) +
+                                  (editingData.m11 || 0) +
+                                  (editingData.m12 || 0)
+                                return (
+                                  <span className={total < 0 ? 'text-red-600' : 'text-gray-900'}>
+                                    {formatAmount(total)}
+                                  </span>
                                 )
-                              : formatAmount(expense.totalAmount)}
+                              })()
+                            ) : (
+                              <span className={expense.totalAmount < 0 ? 'text-red-600' : 'text-gray-900'}>
+                                {formatAmount(expense.totalAmount)}
+                              </span>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900">
                             {expense.createdBy}
@@ -850,44 +883,70 @@ const Expense = () => {
                       <td className="px-4 py-3 font-bold text-gray-900">
                         합계
                       </td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                        {formatAmount(monthlyTotals.m01)}
+                      <td className="px-4 py-3 text-sm font-bold">
+                        <span className={monthlyTotals.m01 < 0 ? 'text-red-600' : 'text-gray-900'}>
+                          {formatAmount(monthlyTotals.m01)}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                        {formatAmount(monthlyTotals.m02)}
+                      <td className="px-4 py-3 text-sm font-bold">
+                        <span className={monthlyTotals.m02 < 0 ? 'text-red-600' : 'text-gray-900'}>
+                          {formatAmount(monthlyTotals.m02)}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                        {formatAmount(monthlyTotals.m03)}
+                      <td className="px-4 py-3 text-sm font-bold">
+                        <span className={monthlyTotals.m03 < 0 ? 'text-red-600' : 'text-gray-900'}>
+                          {formatAmount(monthlyTotals.m03)}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                        {formatAmount(monthlyTotals.m04)}
+                      <td className="px-4 py-3 text-sm font-bold">
+                        <span className={monthlyTotals.m04 < 0 ? 'text-red-600' : 'text-gray-900'}>
+                          {formatAmount(monthlyTotals.m04)}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                        {formatAmount(monthlyTotals.m05)}
+                      <td className="px-4 py-3 text-sm font-bold">
+                        <span className={monthlyTotals.m05 < 0 ? 'text-red-600' : 'text-gray-900'}>
+                          {formatAmount(monthlyTotals.m05)}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                        {formatAmount(monthlyTotals.m06)}
+                      <td className="px-4 py-3 text-sm font-bold">
+                        <span className={monthlyTotals.m06 < 0 ? 'text-red-600' : 'text-gray-900'}>
+                          {formatAmount(monthlyTotals.m06)}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                        {formatAmount(monthlyTotals.m07)}
+                      <td className="px-4 py-3 text-sm font-bold">
+                        <span className={monthlyTotals.m07 < 0 ? 'text-red-600' : 'text-gray-900'}>
+                          {formatAmount(monthlyTotals.m07)}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                        {formatAmount(monthlyTotals.m08)}
+                      <td className="px-4 py-3 text-sm font-bold">
+                        <span className={monthlyTotals.m08 < 0 ? 'text-red-600' : 'text-gray-900'}>
+                          {formatAmount(monthlyTotals.m08)}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                        {formatAmount(monthlyTotals.m09)}
+                      <td className="px-4 py-3 text-sm font-bold">
+                        <span className={monthlyTotals.m09 < 0 ? 'text-red-600' : 'text-gray-900'}>
+                          {formatAmount(monthlyTotals.m09)}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                        {formatAmount(monthlyTotals.m10)}
+                      <td className="px-4 py-3 text-sm font-bold">
+                        <span className={monthlyTotals.m10 < 0 ? 'text-red-600' : 'text-gray-900'}>
+                          {formatAmount(monthlyTotals.m10)}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                        {formatAmount(monthlyTotals.m11)}
+                      <td className="px-4 py-3 text-sm font-bold">
+                        <span className={monthlyTotals.m11 < 0 ? 'text-red-600' : 'text-gray-900'}>
+                          {formatAmount(monthlyTotals.m11)}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                        {formatAmount(monthlyTotals.m12)}
+                      <td className="px-4 py-3 text-sm font-bold">
+                        <span className={monthlyTotals.m12 < 0 ? 'text-red-600' : 'text-gray-900'}>
+                          {formatAmount(monthlyTotals.m12)}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
-                        {formatAmount(monthlyTotals.total)}
+                      <td className="px-4 py-3 text-sm font-bold text-right">
+                        <span className={monthlyTotals.total < 0 ? 'text-red-600' : 'text-gray-900'}>
+                          {formatAmount(monthlyTotals.total)}
+                        </span>
                       </td>
                       <td className="px-4 py-3" colSpan={3}></td>
                     </tr>

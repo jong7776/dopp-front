@@ -1,13 +1,13 @@
 import { apiClient, getFileNameFromHeader } from './commonApi'
 import type { ApiResponse } from '../../types/auth/auth'
-import type { Expense, ExpenseRequest } from '../../types/expense/expense'
+import type { Expense, ExpenseRequest } from '../../types/financial-management/expense'
 
 /**
  * 경비 목록 조회
  */
 export const getExpenseList = async (year: number, signal?: AbortSignal): Promise<Expense[]> => {
   const response = await apiClient.post<ApiResponse<Expense[]>>(
-    `/expense/list?year=${year}`,
+    `/financial-management/expense/list?year=${year}`,
     {},
     { 
       withCredentials: true,
@@ -41,7 +41,7 @@ export const createExpense = async (expense: ExpenseRequest): Promise<void> => {
     (expense.m12 || 0)
 
   const response = await apiClient.post<ApiResponse<null>>(
-    '/expense/create',
+    '/financial-management/expense/create',
     {
       expenseId: 0,
       expenseName: expense.expenseName,
@@ -87,7 +87,7 @@ export const updateExpense = async (expenseId: number, expense: ExpenseRequest):
     (expense.m12 || 0)
 
   const response = await apiClient.post<ApiResponse<null>>(
-    '/expense/update',
+    '/financial-management/expense/update',
     {
       expenseId: expenseId,
       expenseName: expense.expenseName,
@@ -119,7 +119,7 @@ export const updateExpense = async (expenseId: number, expense: ExpenseRequest):
  */
 export const deleteExpense = async (expenseId: number): Promise<void> => {
   const response = await apiClient.post<ApiResponse<null>>(
-    '/expense/delete',
+    '/financial-management/expense/delete',
     { expenseId },
     { withCredentials: true }
   )
@@ -134,7 +134,7 @@ export const deleteExpense = async (expenseId: number): Promise<void> => {
  */
 export const deleteExpenses = async (expenseIds: number[]): Promise<void> => {
   const response = await apiClient.post<ApiResponse<null>>(
-    '/expense/delete',
+    '/financial-management/expense/delete',
     { expenseIds },
     { withCredentials: true }
   )
@@ -149,7 +149,7 @@ export const deleteExpenses = async (expenseIds: number[]): Promise<void> => {
  */
 export const deleteAllExpenses = async (year: number): Promise<void> => {
   const response = await apiClient.post<ApiResponse<null>>(
-    '/expense/delete/all',
+    '/financial-management/expense/delete/all',
     { year },
     { withCredentials: true }
   )
@@ -167,7 +167,7 @@ export const uploadExpenseExcel = async (file: File): Promise<void> => {
   formData.append('file', file)
 
   const response = await apiClient.post<ApiResponse>(
-    '/expense/list/excel/upload',
+    '/financial-management/expense/list/excel/upload',
     formData,
     {
       headers: {
@@ -188,7 +188,7 @@ export const uploadExpenseExcel = async (file: File): Promise<void> => {
 export const downloadExpenseExcel = async (year: number): Promise<void> => {
   try {
     const response = await apiClient.post<Blob>(
-      `/expense/list/excel/download?year=${year}`,
+      `/financial-management/expense/list/excel/download?year=${year}`,
       {},
       {
         responseType: 'blob', // 엑셀 파일은 blob으로 받음
