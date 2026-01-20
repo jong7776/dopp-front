@@ -171,26 +171,9 @@ const Expense = () => {
       return
     }
 
-    // 양수로 입력된 월별 금액을 음수로 변환
-    const processedData: ExpenseRequest = {
-      ...editingData,
-      m01: editingData.m01 > 0 ? -editingData.m01 : editingData.m01,
-      m02: editingData.m02 > 0 ? -editingData.m02 : editingData.m02,
-      m03: editingData.m03 > 0 ? -editingData.m03 : editingData.m03,
-      m04: editingData.m04 > 0 ? -editingData.m04 : editingData.m04,
-      m05: editingData.m05 > 0 ? -editingData.m05 : editingData.m05,
-      m06: editingData.m06 > 0 ? -editingData.m06 : editingData.m06,
-      m07: editingData.m07 > 0 ? -editingData.m07 : editingData.m07,
-      m08: editingData.m08 > 0 ? -editingData.m08 : editingData.m08,
-      m09: editingData.m09 > 0 ? -editingData.m09 : editingData.m09,
-      m10: editingData.m10 > 0 ? -editingData.m10 : editingData.m10,
-      m11: editingData.m11 > 0 ? -editingData.m11 : editingData.m11,
-      m12: editingData.m12 > 0 ? -editingData.m12 : editingData.m12,
-    }
-
     try {
       if (editingId === 'new') {
-        await createExpense(processedData)
+        await createExpense(editingData)
         Swal.fire({
           icon: 'success',
           title: '성공',
@@ -199,7 +182,7 @@ const Expense = () => {
           confirmButtonColor: '#66bb6a',
         })
       } else if (editingId !== null) {
-        await updateExpense(editingId, processedData)
+        await updateExpense(editingId, editingData)
         Swal.fire({
           icon: 'success',
           title: '성공',
