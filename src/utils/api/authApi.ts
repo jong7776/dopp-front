@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { setAccessToken, removeAccessToken } from '../auth'
 import { apiClient } from './commonApi'
-import type { ApiResponse, LoginRequest, LoginResponse } from '../../types/auth/auth'
+import type { ApiResponse, LoginRequest, LoginResponse, UserInfo, ChangePasswordRequest } from '../../types/auth/auth'
 
 /**
  * 로그인 API
@@ -46,5 +46,53 @@ export const logout = async (): Promise<void> => {
     // 토큰 삭제 및 로그인 페이지로 리다이렉트
     removeAccessToken()
     window.location.href = '/login'
+  }
+}
+
+/**
+ * 사용자 정보 조회 API
+ */
+export const getUserInfo = async (): Promise<UserInfo> => {
+  try {
+    const response = await apiClient.get<ApiResponse<UserInfo>>('/user/info')
+    
+    if (response.data.code === '000000' && response.data.data) {
+      console.log(response.data.data)
+      return response.data.data
+    }
+    
+    throw new Error(response.data.frontMessage || response.data.message || '사용자 정보 조회 실패')
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.data) {
+      const errorData = error.response.data as ApiResponse
+      throw new Error(errorData.frontMessage || errorData.message || '사용자 정보 조회 실패')
+    }
+    throw error
+  }
+}
+
+/**
+ * 비밀번호 수정 API
+ */
+export const changePassword = async (request: ChangePasswordRequest): Promise<void> => {
+  try {
+    const response = await apiClient.post<ApiResponse>(
+      '/user/password/update',
+      {
+        userId: request.userId,
+        currentPassword: request.currentPassword,
+        newPassword: request.newPassword,
+      }
+    )
+    
+    if (response.data.code !== '000000') {
+      throw new Error(response.data.frontMessage || response.data.message || '비밀번호 수정 실패')
+    }
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.data) {
+      const errorData = error.response.data as ApiResponse
+      throw new Error(errorData.frontMessage || errorData.message || '비밀번호 수정 실패')
+    }
+    throw error
   }
 }

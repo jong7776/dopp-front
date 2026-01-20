@@ -44,3 +44,25 @@ export interface LoginResponse {
 export interface RefreshTokenResponse {
   accessToken: string
 }
+
+// 사용자 정보 타입
+export interface UserInfo {
+  userId: number
+  loginId: string
+  nickname: string
+  role: string
+  isActive: boolean
+  isFirstLogin: boolean
+  createdAt: string
+  updatedAt: string
+  createdBy: string
+  updatedBy: string
+}
+
+// 비밀번호 수정 요청 타입
+export interface ChangePasswordRequest {
+  userId: number
+  currentPassword: string
+  newPassword: string
+  confirmPassword?: string // 클라이언트 측 검증용 (서버로 전송하지 않음)
+}
