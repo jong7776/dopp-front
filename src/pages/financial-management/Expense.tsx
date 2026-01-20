@@ -349,6 +349,49 @@ const Expense = () => {
     return totals
   }, [expenses])
 
+  // 그래프용 월별 데이터
+  const chartData = useMemo(() => {
+    const months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
+    const values = [
+      monthlyTotals.m01,
+      monthlyTotals.m02,
+      monthlyTotals.m03,
+      monthlyTotals.m04,
+      monthlyTotals.m05,
+      monthlyTotals.m06,
+      monthlyTotals.m07,
+      monthlyTotals.m08,
+      monthlyTotals.m09,
+      monthlyTotals.m10,
+      monthlyTotals.m11,
+      monthlyTotals.m12,
+    ]
+    return months.map((month, index) => ({
+      month,
+      value: values[index],
+    }))
+  }, [monthlyTotals])
+
+  // 그래프 최대값 계산 (Y축 스케일링용)
+  const maxValue = useMemo(() => {
+    const values = [
+      monthlyTotals.m01,
+      monthlyTotals.m02,
+      monthlyTotals.m03,
+      monthlyTotals.m04,
+      monthlyTotals.m05,
+      monthlyTotals.m06,
+      monthlyTotals.m07,
+      monthlyTotals.m08,
+      monthlyTotals.m09,
+      monthlyTotals.m10,
+      monthlyTotals.m11,
+      monthlyTotals.m12,
+    ]
+    const max = Math.max(...values.map(Math.abs))
+    return max === 0 ? 1 : max * 1.1 // 여백을 위해 10% 추가
+  }, [monthlyTotals])
+
   // 엑셀 업로드
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -451,6 +494,125 @@ const Expense = () => {
               조회
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* 월별 그래프 영역 */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-xl font-bold text-gray-700 mb-4">경비 월별 현황</h3>
+        <div className="w-full h-80">
+          <svg width="100%" height="100%" viewBox="0 0 1000 300" preserveAspectRatio="xMidYMid meet">
+            {/* 배경 그리드 */}
+            <defs>
+              <pattern id="expense-grid" width="83.33" height="50" patternUnits="userSpaceOnUse">
+                <line x1="0" y1="50" x2="0" y2="0" stroke="#e5e7eb" strokeWidth="1" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#expense-grid)" />
+
+            {/* Y축 라벨 (금액) */}
+            {[0, 0.25, 0.5, 0.75, 1].map((ratio, index) => {
+              const value = Math.round(maxValue * ratio)
+              const y = 280 - (280 * ratio)
+              return (
+                <g key={index}>
+                  <line
+                    x1="60"
+                    y1={y + 10}
+                    x2="960"
+                    y2={y + 10}
+                    stroke="#e5e7eb"
+                    strokeWidth="1"
+                    strokeDasharray="2,2"
+                  />
+                  <text
+                    x="55"
+                    y={y + 15}
+                    textAnchor="end"
+                    fontSize="12"
+                    fill="#6b7280"
+                    className="font-medium"
+                  >
+                    {value > 0 ? value.toLocaleString() : 0}
+                  </text>
+                </g>
+              )
+            })}
+
+            {/* X축 라벨 (월) */}
+            {chartData.map((item, index) => {
+              const x = 100 + (index * 76.67)
+              return (
+                <text
+                  key={index}
+                  x={x + 38.33}
+                  y="295"
+                  textAnchor="middle"
+                  fontSize="12"
+                  fill="#374151"
+                  className="font-medium"
+                >
+                  {item.month}
+                </text>
+              )
+            })}
+
+            {/* 바 차트 */}
+            {chartData.map((item, index) => {
+              const x = 100 + (index * 76.67)
+              const barWidth = 40
+              const barHeight = Math.abs((item.value / maxValue) * 250)
+              // 양수/음수 모두 위로 향하도록 y 위치를 기준선 위로 설정
+              const y = 280 - barHeight
+              const color = '#ef4444'
+
+              return (
+                <g key={index}>
+                  {/* 바 */}
+                  <rect
+                    x={x + 18.33}
+                    y={y}
+                    width={barWidth}
+                    height={barHeight}
+                    fill={color}
+                    opacity="0.8"
+                    className="hover:opacity-100 transition-opacity cursor-pointer"
+                  >
+                    <title>
+                      {item.month}: {item.value.toLocaleString()}원
+                    </title>
+                  </rect>
+                  {/* 값 표시 */}
+                  {Math.abs(item.value) > maxValue * 0.05 && (
+                    <text
+                      x={x + 38.33}
+                      y={y - 5}
+                      textAnchor="middle"
+                      fontSize="10"
+                      fill="#374151"
+                      className="font-semibold"
+                    >
+                      {Math.abs(item.value) >= 1000000
+                        ? `${(Math.abs(item.value) / 1000000).toFixed(1)}M`
+                        : Math.abs(item.value) >= 1000
+                        ? `${(Math.abs(item.value) / 1000).toFixed(0)}K`
+                        : Math.abs(item.value)}
+                    </text>
+                  )}
+                </g>
+              )
+            })}
+
+            {/* 0 기준선 */}
+            <line
+              x1="60"
+              y1="280"
+              x2="960"
+              y2="280"
+              stroke="#9ca3af"
+              strokeWidth="2"
+            />
+          </svg>
         </div>
       </div>
 

@@ -144,6 +144,82 @@ const Contract = () => {
     return totals
   }, [currentContracts])
 
+  // 매출 월별 합계 계산
+  const salesMonthlyTotals = useMemo(() => {
+    const totals = {
+      m01: 0, m02: 0, m03: 0, m04: 0, m05: 0, m06: 0,
+      m07: 0, m08: 0, m09: 0, m10: 0, m11: 0, m12: 0,
+    }
+    contractData.sales.forEach((contract) => {
+      totals.m01 += contract.m01 || 0
+      totals.m02 += contract.m02 || 0
+      totals.m03 += contract.m03 || 0
+      totals.m04 += contract.m04 || 0
+      totals.m05 += contract.m05 || 0
+      totals.m06 += contract.m06 || 0
+      totals.m07 += contract.m07 || 0
+      totals.m08 += contract.m08 || 0
+      totals.m09 += contract.m09 || 0
+      totals.m10 += contract.m10 || 0
+      totals.m11 += contract.m11 || 0
+      totals.m12 += contract.m12 || 0
+    })
+    return totals
+  }, [contractData.sales])
+
+  // 매입 월별 합계 계산
+  const purchaseMonthlyTotals = useMemo(() => {
+    const totals = {
+      m01: 0, m02: 0, m03: 0, m04: 0, m05: 0, m06: 0,
+      m07: 0, m08: 0, m09: 0, m10: 0, m11: 0, m12: 0,
+    }
+    contractData.purchase.forEach((contract) => {
+      totals.m01 += contract.m01 || 0
+      totals.m02 += contract.m02 || 0
+      totals.m03 += contract.m03 || 0
+      totals.m04 += contract.m04 || 0
+      totals.m05 += contract.m05 || 0
+      totals.m06 += contract.m06 || 0
+      totals.m07 += contract.m07 || 0
+      totals.m08 += contract.m08 || 0
+      totals.m09 += contract.m09 || 0
+      totals.m10 += contract.m10 || 0
+      totals.m11 += contract.m11 || 0
+      totals.m12 += contract.m12 || 0
+    })
+    return totals
+  }, [contractData.purchase])
+
+  // 그래프용 월별 데이터 (매출 + 매입)
+  const chartData = useMemo(() => {
+    const months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
+    const salesValues = [
+      salesMonthlyTotals.m01, salesMonthlyTotals.m02, salesMonthlyTotals.m03, salesMonthlyTotals.m04,
+      salesMonthlyTotals.m05, salesMonthlyTotals.m06, salesMonthlyTotals.m07, salesMonthlyTotals.m08,
+      salesMonthlyTotals.m09, salesMonthlyTotals.m10, salesMonthlyTotals.m11, salesMonthlyTotals.m12,
+    ]
+    const purchaseValues = [
+      purchaseMonthlyTotals.m01, purchaseMonthlyTotals.m02, purchaseMonthlyTotals.m03, purchaseMonthlyTotals.m04,
+      purchaseMonthlyTotals.m05, purchaseMonthlyTotals.m06, purchaseMonthlyTotals.m07, purchaseMonthlyTotals.m08,
+      purchaseMonthlyTotals.m09, purchaseMonthlyTotals.m10, purchaseMonthlyTotals.m11, purchaseMonthlyTotals.m12,
+    ]
+    return months.map((month, index) => ({
+      month,
+      sales: salesValues[index],
+      purchase: purchaseValues[index],
+    }))
+  }, [salesMonthlyTotals, purchaseMonthlyTotals])
+
+  // 그래프 최대값 계산 (Y축 스케일링용)
+  const maxValue = useMemo(() => {
+    const allValues = [
+      ...Object.values(salesMonthlyTotals),
+      ...Object.values(purchaseMonthlyTotals),
+    ]
+    const max = Math.max(...allValues.map(Math.abs))
+    return max === 0 ? 1 : max * 1.1 // 여백을 위해 10% 추가
+  }, [salesMonthlyTotals, purchaseMonthlyTotals])
+
   // 체크박스 선택/해제
   const handleSelect = (contractId: number) => {
     const newSelected = new Set(selectedIds)
@@ -516,6 +592,173 @@ const Contract = () => {
               조회
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* 월별 그래프 영역 */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold text-gray-700">매출/매입 월별 현황</h3>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#66bb6a' }}></div>
+              <span className="text-sm text-gray-700 font-medium">매출</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ef4444' }}></div>
+              <span className="text-sm text-gray-700 font-medium">매입</span>
+            </div>
+          </div>
+        </div>
+        <div className="w-full h-80">
+          <svg width="100%" height="100%" viewBox="0 0 1000 300" preserveAspectRatio="xMidYMid meet">
+            {/* 배경 그리드 */}
+            <defs>
+              <pattern id="contract-grid" width="83.33" height="50" patternUnits="userSpaceOnUse">
+                <line x1="0" y1="50" x2="0" y2="0" stroke="#e5e7eb" strokeWidth="1" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#contract-grid)" />
+
+            {/* Y축 라벨 (금액) */}
+            {[0, 0.25, 0.5, 0.75, 1].map((ratio, index) => {
+              const value = Math.round(maxValue * ratio)
+              const y = 280 - (280 * ratio)
+              return (
+                <g key={index}>
+                  <line
+                    x1="60"
+                    y1={y + 10}
+                    x2="960"
+                    y2={y + 10}
+                    stroke="#e5e7eb"
+                    strokeWidth="1"
+                    strokeDasharray="2,2"
+                  />
+                  <text
+                    x="55"
+                    y={y + 15}
+                    textAnchor="end"
+                    fontSize="12"
+                    fill="#6b7280"
+                    className="font-medium"
+                  >
+                    {value > 0 ? value.toLocaleString() : 0}
+                  </text>
+                </g>
+              )
+            })}
+
+            {/* X축 라벨 (월) */}
+            {chartData.map((item, index) => {
+              const x = 100 + (index * 76.67)
+              return (
+                <text
+                  key={index}
+                  x={x + 38.33}
+                  y="295"
+                  textAnchor="middle"
+                  fontSize="12"
+                  fill="#374151"
+                  className="font-medium"
+                >
+                  {item.month}
+                </text>
+              )
+            })}
+
+            {/* 바 차트 - 매출과 매입을 나란히 표시 */}
+            {chartData.map((item, index) => {
+              const x = 100 + (index * 76.67)
+              const barWidth = 16
+              const spacing = 4
+              const salesBarHeight = Math.abs((item.sales / maxValue) * 250)
+              const purchaseBarHeight = Math.abs((item.purchase / maxValue) * 250)
+              
+              // 매출 바
+              const salesY = 280 - salesBarHeight
+              // 매입 바 (매출 바 오른쪽에 배치)
+              const purchaseX = x + 18.33 + barWidth + spacing
+              const purchaseY = 280 - purchaseBarHeight
+
+              return (
+                <g key={index}>
+                  {/* 매출 바 */}
+                  <rect
+                    x={x + 18.33}
+                    y={salesY}
+                    width={barWidth}
+                    height={salesBarHeight}
+                    fill="#66bb6a"
+                    opacity="0.8"
+                    className="hover:opacity-100 transition-opacity cursor-pointer"
+                  >
+                    <title>
+                      {item.month} 매출: {item.sales.toLocaleString()}원
+                    </title>
+                  </rect>
+                  {/* 매입 바 */}
+                  <rect
+                    x={purchaseX}
+                    y={purchaseY}
+                    width={barWidth}
+                    height={purchaseBarHeight}
+                    fill="#ef4444"
+                    opacity="0.8"
+                    className="hover:opacity-100 transition-opacity cursor-pointer"
+                  >
+                    <title>
+                      {item.month} 매입: {item.purchase.toLocaleString()}원
+                    </title>
+                  </rect>
+                  {/* 값 표시 - 매출 */}
+                  {Math.abs(item.sales) > maxValue * 0.05 && (
+                    <text
+                      x={x + 18.33 + barWidth / 2}
+                      y={salesY - 5}
+                      textAnchor="middle"
+                      fontSize="9"
+                      fill="#374151"
+                      className="font-semibold"
+                    >
+                      {Math.abs(item.sales) >= 1000000
+                        ? `${(Math.abs(item.sales) / 1000000).toFixed(1)}M`
+                        : Math.abs(item.sales) >= 1000
+                        ? `${(Math.abs(item.sales) / 1000).toFixed(0)}K`
+                        : Math.abs(item.sales)}
+                    </text>
+                  )}
+                  {/* 값 표시 - 매입 */}
+                  {Math.abs(item.purchase) > maxValue * 0.05 && (
+                    <text
+                      x={purchaseX + barWidth / 2}
+                      y={purchaseY - 5}
+                      textAnchor="middle"
+                      fontSize="9"
+                      fill="#374151"
+                      className="font-semibold"
+                    >
+                      {Math.abs(item.purchase) >= 1000000
+                        ? `${(Math.abs(item.purchase) / 1000000).toFixed(1)}M`
+                        : Math.abs(item.purchase) >= 1000
+                        ? `${(Math.abs(item.purchase) / 1000).toFixed(0)}K`
+                        : Math.abs(item.purchase)}
+                    </text>
+                  )}
+                </g>
+              )
+            })}
+
+            {/* 0 기준선 */}
+            <line
+              x1="60"
+              y1="280"
+              x2="960"
+              y2="280"
+              stroke="#9ca3af"
+              strokeWidth="2"
+            />
+          </svg>
         </div>
       </div>
 
