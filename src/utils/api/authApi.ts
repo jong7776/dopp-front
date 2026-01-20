@@ -50,22 +50,27 @@ export const logout = async (): Promise<void> => {
 }
 
 /**
- * 사용자 정보 조회 API
+ * 내 정보 조회 API
  */
-export const getUserInfo = async (): Promise<UserInfo> => {
+export const getMyInfo = async (signal?: AbortSignal): Promise<UserInfo> => {
   try {
-    const response = await apiClient.get<ApiResponse<UserInfo>>('/user/info')
+    const response = await apiClient.get<ApiResponse<UserInfo>>('/user/my', {
+      signal,
+    })
     
     if (response.data.code === '000000' && response.data.data) {
-      console.log(response.data.data)
       return response.data.data
     }
     
-    throw new Error(response.data.frontMessage || response.data.message || '사용자 정보 조회 실패')
+    throw new Error(response.data.frontMessage || response.data.message || '내 정보 조회 실패')
   } catch (error) {
+    // AbortError는 무시 (요청이 취소된 경우)
+    if (axios.isAxiosError(error) && error.name === 'AbortError') {
+      throw error
+    }
     if (axios.isAxiosError(error) && error.response?.data) {
       const errorData = error.response.data as ApiResponse
-      throw new Error(errorData.frontMessage || errorData.message || '사용자 정보 조회 실패')
+      throw new Error(errorData.frontMessage || errorData.message || '내 정보 조회 실패')
     }
     throw error
   }

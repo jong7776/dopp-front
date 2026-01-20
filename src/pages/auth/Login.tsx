@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { login, getUserInfo } from '../../utils/api'
+import { login, getMyInfo } from '../../utils/api'
 import { LoginRequest, UserInfo } from '../../types/auth/auth'
 import ChangePasswordModal from '../../components/ChangePasswordModal'
 
@@ -59,7 +59,7 @@ const Login = () => {
       await login(formData)
       // 로그인 성공 시 사용자 정보 조회
       try {
-        const fetchedUserInfo = await getUserInfo()
+        const fetchedUserInfo = await getMyInfo()
         setUserInfo(fetchedUserInfo)
         // isFirstLogin이 true이면 비밀번호 수정 팝업 표시
         if (fetchedUserInfo.isFirstLogin) {

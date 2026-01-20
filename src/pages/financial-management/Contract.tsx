@@ -511,9 +511,9 @@ const Contract = () => {
             <h3 className="text-xl font-bold text-gray-700">조회 조건</h3>
             <span className="text-sm text-gray-500">(* Enter 시 조회가능합니다. )</span>
           </div>
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-              <label htmlFor="year-picker" className="text-lg text-gray-600 whitespace-nowrap">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label htmlFor="year-picker" className="block text-sm font-medium text-gray-700 mb-1">
                 연도
               </label>
               <div className="relative">
@@ -521,7 +521,7 @@ const Contract = () => {
                   id="year-picker"
                   value={year}
                   onChange={(e) => setYear(Number(e.target.value))}
-                  className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#66bb6a] cursor-pointer appearance-none bg-white"
+                  className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-[#66bb6a] cursor-pointer appearance-none bg-white"
                 >
                   {Array.from({ length: 20 }, (_, i) => new Date().getFullYear() - 10 + i).map((y) => (
                     <option key={y} value={y}>
@@ -546,8 +546,8 @@ const Contract = () => {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <label htmlFor="contract-name-filter" className="text-lg text-gray-600 whitespace-nowrap">
+            <div>
+              <label htmlFor="contract-name-filter" className="block text-sm font-medium text-gray-700 mb-1">
                 계약명
               </label>
               <input
@@ -561,11 +561,11 @@ const Contract = () => {
                   }
                 }}
                 placeholder="계약명을 입력하세요"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#66bb6a]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#66bb6a]"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <label htmlFor="company-name-filter" className="text-lg text-gray-600 whitespace-nowrap">
+            <div>
+              <label htmlFor="company-name-filter" className="block text-sm font-medium text-gray-700 mb-1">
                 회사명
               </label>
               <input
@@ -579,12 +579,14 @@ const Contract = () => {
                   }
                 }}
                 placeholder="회사명을 입력하세요"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#66bb6a]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#66bb6a]"
               />
             </div>
+          </div>
+          <div className="flex justify-end">
             <button
               onClick={fetchContracts}
-              className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none focus:ring-2 text-sm whitespace-nowrap"
+              className="px-4 py-2 text-white rounded-md focus:outline-none"
               style={{ backgroundColor: '#66bb6a' }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
@@ -768,7 +770,7 @@ const Contract = () => {
           <button
             onClick={handleStartAdd}
             disabled={editingId !== null}
-            className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ backgroundColor: '#66bb6a' }}
             onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4caf50')}
             onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#66bb6a')}
@@ -778,14 +780,14 @@ const Contract = () => {
           <button
             onClick={handleDeleteSelected}
             disabled={selectedIds.size === 0}
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none active:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none active:outline-none focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             선택삭제 ({selectedIds.size})
           </button>
           <button
             onClick={handleDeleteAll}
             disabled={currentContracts.length === 0}
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none active:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none active:outline-none focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             전체삭제
           </button>
@@ -793,7 +795,7 @@ const Contract = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={downloadContractSampleExcel}
-            className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none focus:ring-2 flex items-center gap-2"
+            className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none flex items-center gap-2"
             style={{ backgroundColor: '#66bb6a' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
@@ -823,7 +825,7 @@ const Contract = () => {
           />
           <label
             htmlFor="excel-upload"
-            className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none focus:ring-2 cursor-pointer flex items-center gap-2"
+            className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none cursor-pointer flex items-center gap-2"
             style={{ backgroundColor: '#66bb6a' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
@@ -845,7 +847,7 @@ const Contract = () => {
           </label>
           <button
             onClick={handleExcelDownload}
-            className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none focus:ring-2 flex items-center gap-2"
+            className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none flex items-center gap-2"
             style={{ backgroundColor: '#66bb6a' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
@@ -1093,7 +1095,7 @@ const Contract = () => {
                         <div className="flex gap-2">
                           <button
                             onClick={handleSave}
-                            className="px-3 py-1.5 text-sm text-white rounded-md focus:outline-none active:outline-none focus:ring-2 whitespace-nowrap"
+                            className="px-3 py-1.5 text-sm text-white rounded-md focus:outline-none active:outline-none whitespace-nowrap"
                             style={{ backgroundColor: '#66bb6a' }}
                             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
@@ -1102,7 +1104,7 @@ const Contract = () => {
                           </button>
                           <button
                             onClick={handleCancelEdit}
-                            className="px-3 py-1.5 text-sm text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none active:outline-none focus:ring-2 whitespace-nowrap"
+                            className="px-3 py-1.5 text-sm text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none active:outline-none whitespace-nowrap"
                           >
                             취소
                           </button>
@@ -1302,7 +1304,7 @@ const Contract = () => {
                               <div className="flex gap-2">
                                 <button
                                   onClick={handleSave}
-                                  className="px-3 py-1.5 text-sm text-white rounded-md focus:outline-none active:outline-none focus:ring-2 whitespace-nowrap"
+                                  className="px-3 py-1.5 text-sm text-white rounded-md focus:outline-none active:outline-none whitespace-nowrap"
                                   style={{ backgroundColor: '#66bb6a' }}
                                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
                                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
@@ -1311,7 +1313,7 @@ const Contract = () => {
                                 </button>
                                 <button
                                   onClick={handleCancelEdit}
-                                  className="px-3 py-1.5 text-sm text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none active:outline-none focus:ring-2 whitespace-nowrap"
+                                  className="px-3 py-1.5 text-sm text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none active:outline-none whitespace-nowrap"
                                 >
                                   취소
                                 </button>
@@ -1320,7 +1322,7 @@ const Contract = () => {
                               <button
                                 onClick={() => handleStartEdit(contract)}
                                 disabled={editingId !== null}
-                                className="px-3 py-1.5 text-sm text-white rounded-md focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                className="px-3 py-1.5 text-sm text-white rounded-md focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                 style={{ backgroundColor: '#66bb6a' }}
                                 onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4caf50')}
                                 onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#66bb6a')}

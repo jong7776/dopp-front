@@ -28,6 +28,14 @@ const Layout = ({ children }: LayoutProps) => {
         { path: '/financial-management/contract', label: '매입/매출 관리', icon: '📋' },
       ],
     },
+    {
+      label: '사용자 관리',
+      icon: '👤',
+      children: [
+        { path: '/user/my', label: '내 정보 조회', icon: '🔍' },
+        { path: '/user/management', label: '사용자 관리', icon: '👥' },
+      ],
+    },
   ]
 
   const toggleExpand = (label: string) => {

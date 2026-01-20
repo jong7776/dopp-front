@@ -4,6 +4,8 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Dashboard from './pages/dashboard/Dashboard'
 import Expense from './pages/financial-management/Expense'
 import Contract from './pages/financial-management/Contract'
+import My from './pages/user/My'
+import User from './pages/user/User'
 import Login from './pages/auth/Login'
 import { isAuthenticated } from './utils/auth'
 
@@ -29,6 +31,8 @@ function App() {
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/financial-management/expense" element={<Expense />} />
                   <Route path="/financial-management/contract" element={<Contract />} />
+                  <Route path="/user/my" element={<My />} />
+                  <Route path="/user/management" element={<User />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>
