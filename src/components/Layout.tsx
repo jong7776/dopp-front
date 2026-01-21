@@ -75,7 +75,7 @@ const Layout = ({ children }: LayoutProps) => {
   }, [location.pathname])
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="px-4 sm:px-6 lg:px-8">
@@ -132,14 +132,14 @@ const Layout = ({ children }: LayoutProps) => {
       </header>
 
 
-      <div className="flex relative">
+      <div className="flex relative flex-1">
         {/* Sidebar */}
         <aside
-          className={`w-64 bg-white shadow-sm min-h-[calc(100vh-4rem)] transition-transform duration-300 ease-in-out ${
+          className={`w-64 bg-white shadow-sm h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 transition-transform duration-300 ease-in-out flex flex-col ${
             isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           } fixed lg:absolute z-30`}
         >
-          <nav className="p-4">
+          <nav className="p-4 flex-1">
             <ul className="space-y-1">
               {navItems.map((item, index) => {
                 const hasChildren = item.children && item.children.length > 0
@@ -223,7 +223,7 @@ const Layout = ({ children }: LayoutProps) => {
         )}
 
         {/* Main Content */}
-        <main className={`flex-1 p-8 transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}>
+        <main className={`flex-1 p-8 transition-all duration-300 bg-gray-50 ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}>
           {children}
         </main>
       </div>
