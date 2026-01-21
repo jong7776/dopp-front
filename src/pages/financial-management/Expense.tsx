@@ -12,6 +12,8 @@ const Expense = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [editingId, setEditingId] = useState<number | 'new' | null>(null)
   const [editingData, setEditingData] = useState<ExpenseRequest | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
+  const [currentExpense, setCurrentExpense] = useState<Expense | null>(null)
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -114,6 +116,7 @@ const Expense = () => {
   // 새 항목 추가 시작
   const handleStartAdd = () => {
     setEditingId('new')
+    setCurrentExpense(null)
     setEditingData({
       expenseName: '',
       year: year,
@@ -130,11 +133,13 @@ const Expense = () => {
       m11: 0,
       m12: 0,
     })
+    setIsModalOpen(true)
   }
 
   // 수정 시작
   const handleStartEdit = (expense: Expense) => {
     setEditingId(expense.expenseId)
+    setCurrentExpense(expense)
     setEditingData({
       expenseName: expense.expenseName,
       year: expense.year,
@@ -151,12 +156,15 @@ const Expense = () => {
       m11: expense.m11,
       m12: expense.m12,
     })
+    setIsModalOpen(true)
   }
 
   // 편집 취소
   const handleCancelEdit = () => {
     setEditingId(null)
     setEditingData(null)
+    setCurrentExpense(null)
+    setIsModalOpen(false)
   }
 
   // 저장
@@ -193,6 +201,8 @@ const Expense = () => {
       }
       setEditingId(null)
       setEditingData(null)
+      setCurrentExpense(null)
+      setIsModalOpen(false)
       fetchExpenses()
     } catch (error: any) {
       Swal.fire({
@@ -623,7 +633,7 @@ const Expense = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={handleStartAdd}
-            disabled={editingId !== null}
+            disabled={isModalOpen}
             className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ backgroundColor: '#66bb6a' }}
             onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4caf50')}
@@ -787,236 +797,65 @@ const Expense = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                   합계
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                  등록자
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                  수정자
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '140px' }}>
-                  관리
-                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={18} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={15} className="px-4 py-8 text-center text-gray-500">
                     로딩 중...
                   </td>
                 </tr>
               ) : (
                 <>
-                  {/* 새 항목 추가 행 */}
-                  {editingId === 'new' && editingData && (
-                    <tr className="bg-blue-50">
-                      <td className="px-4 py-3"></td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="text"
-                          value={editingData.expenseName}
-                          onChange={(e) =>
-                            setEditingData({ ...editingData, expenseName: e.target.value })
-                          }
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
-                          placeholder="경비명"
-                        />
-                      </td>
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
-                        const key = `m${String(month).padStart(2, '0')}` as keyof ExpenseRequest
-                        return (
-                          <td key={month} className="px-4 py-3">
-                            <input
-                              type="number"
-                              value={editingData[key] || 0}
-                              onChange={(e) =>
-                                setEditingData({
-                                  ...editingData,
-                                  [key]: Number(e.target.value) || 0,
-                                })
-                              }
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right min-w-0"
-                            />
-                          </td>
-                        )
-                      })}
-                      <td className="px-4 py-3 text-sm font-semibold text-right">
-                        {(() => {
-                          const total = (editingData.m01 || 0) +
-                            (editingData.m02 || 0) +
-                            (editingData.m03 || 0) +
-                            (editingData.m04 || 0) +
-                            (editingData.m05 || 0) +
-                            (editingData.m06 || 0) +
-                            (editingData.m07 || 0) +
-                            (editingData.m08 || 0) +
-                            (editingData.m09 || 0) +
-                            (editingData.m10 || 0) +
-                            (editingData.m11 || 0) +
-                            (editingData.m12 || 0)
-                          return (
-                            <span className={total < 0 ? 'text-red-600' : 'text-gray-900'}>
-                              {formatAmount(total)}
-                            </span>
-                          )
-                        })()}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">-</td>
-                      <td className="px-4 py-3 text-sm text-gray-500">-</td>
-                      <td className="px-4 py-3 text-sm" style={{ width: '140px' }}>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={handleSave}
-                            className="px-3 py-1.5 text-sm text-white rounded-md focus:outline-none active:outline-none whitespace-nowrap"
-                            style={{ backgroundColor: '#66bb6a' }}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
-                          >
-                            저장
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            className="px-3 py-1.5 text-sm text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none active:outline-none whitespace-nowrap"
-                          >
-                            취소
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-
-                  {/* 기존 데이터 행 */}
-                  {expenses.length === 0 && editingId !== 'new' ? (
+                  {/* 데이터 행 */}
+                  {expenses.length === 0 ? (
                     <tr>
-                      <td colSpan={18} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={15} className="px-4 py-8 text-center text-gray-500">
                         데이터가 없습니다.
                       </td>
                     </tr>
                   ) : (
                     expenses.map((expense) => {
-                      const isEditing = editingId === expense.expenseId
-                      const displayData = isEditing && editingData ? editingData : expense
-
                       return (
-                        <tr key={expense.expenseId} className={isEditing ? 'bg-blue-50' : 'hover:bg-gray-50'}>
-                          <td className="px-4 py-3">
-                            {!isEditing && (
-                              <input
-                                type="checkbox"
-                                checked={selectedIds.has(expense.expenseId)}
-                                onChange={() => handleSelect(expense.expenseId)}
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              />
-                            )}
+                        <tr 
+                          key={expense.expenseId} 
+                          className="hover:bg-gray-50 cursor-pointer"
+                          onClick={() => {
+                            if (!isModalOpen) {
+                              handleStartEdit(expense)
+                            }
+                          }}
+                        >
+                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(expense.expenseId)}
+                              onChange={() => handleSelect(expense.expenseId)}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              onClick={(e) => e.stopPropagation()}
+                            />
                           </td>
                           <td className="px-4 py-3">
-                            {isEditing ? (
-                              <input
-                                type="text"
-                                value={displayData.expenseName}
-                                onChange={(e) =>
-                                  setEditingData({
-                                    ...editingData!,
-                                    expenseName: e.target.value,
-                                  })
-                                }
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
-                              />
-                            ) : (
-                              <span className="text-sm text-gray-900">{expense.expenseName}</span>
-                            )}
+                            <span className="text-sm text-gray-900">{expense.expenseName}</span>
                           </td>
                           {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
-                            const key = `m${String(month).padStart(2, '0')}` as keyof ExpenseRequest
-                            const value = isEditing ? (displayData as ExpenseRequest)[key] : (expense as Expense)[key]
+                            const key = `m${String(month).padStart(2, '0')}` as keyof Expense
+                            const value = expense[key] as number
                             return (
                               <td key={month} className="px-4 py-3">
-                                {isEditing ? (
-                                  <input
-                                    type="number"
-                                    value={value || 0}
-                                    onChange={(e) =>
-                                      setEditingData({
-                                        ...editingData!,
-                                        [key]: Number(e.target.value) || 0,
-                                      })
-                                    }
-                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right min-w-0"
-                                  />
-                                ) : (
-                                  <span className={`text-sm text-right ${
-                                    (value as number) < 0 ? 'text-red-600' : 'text-gray-900'
-                                  }`}>
-                                    {formatAmount(value as number)}
-                                  </span>
-                                )}
+                                <span className={`text-sm text-right ${
+                                  value < 0 ? 'text-red-600' : 'text-gray-900'
+                                }`}>
+                                  {formatAmount(value)}
+                                </span>
                               </td>
                             )
                           })}
                           <td className="px-4 py-3 text-sm font-semibold text-right">
-                            {isEditing && editingData ? (
-                              (() => {
-                                const total = (editingData.m01 || 0) +
-                                  (editingData.m02 || 0) +
-                                  (editingData.m03 || 0) +
-                                  (editingData.m04 || 0) +
-                                  (editingData.m05 || 0) +
-                                  (editingData.m06 || 0) +
-                                  (editingData.m07 || 0) +
-                                  (editingData.m08 || 0) +
-                                  (editingData.m09 || 0) +
-                                  (editingData.m10 || 0) +
-                                  (editingData.m11 || 0) +
-                                  (editingData.m12 || 0)
-                                return (
-                                  <span className={total < 0 ? 'text-red-600' : 'text-gray-900'}>
-                                    {formatAmount(total)}
-                                  </span>
-                                )
-                              })()
-                            ) : (
-                              <span className={expense.totalAmount < 0 ? 'text-red-600' : 'text-gray-900'}>
-                                {formatAmount(expense.totalAmount)}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {expense.createdBy}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {expense.updatedBy}
-                          </td>
-                          <td className="px-4 py-3 text-sm" style={{ width: '140px' }}>
-                            {isEditing ? (
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={handleSave}
-                                  className="px-3 py-1.5 text-sm text-white rounded-md focus:outline-none active:outline-none whitespace-nowrap"
-                                  style={{ backgroundColor: '#66bb6a' }}
-                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
-                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
-                                >
-                                  저장
-                                </button>
-                                <button
-                                  onClick={handleCancelEdit}
-                                  className="px-3 py-1.5 text-sm text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none active:outline-none whitespace-nowrap"
-                                >
-                                  취소
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => handleStartEdit(expense)}
-                                disabled={editingId !== null}
-                                className="px-3 py-1.5 text-sm text-white rounded-md focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                                style={{ backgroundColor: '#66bb6a' }}
-                                onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4caf50')}
-                                onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#66bb6a')}
-                              >
-                                수정
-                              </button>
-                            )}
+                            <span className={expense.totalAmount < 0 ? 'text-red-600' : 'text-gray-900'}>
+                              {formatAmount(expense.totalAmount)}
+                            </span>
                           </td>
                         </tr>
                       )
@@ -1095,7 +934,6 @@ const Expense = () => {
                           {formatAmount(monthlyTotals.total)}
                         </span>
                       </td>
-                      <td className="px-4 py-3" colSpan={3}></td>
                     </tr>
                   )}
                 </>
@@ -1104,6 +942,139 @@ const Expense = () => {
           </table>
         </div>
       </div>
+
+      {/* 등록/수정 모달 팝업 */}
+      {isModalOpen && editingData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+              <h3 className="text-xl font-bold text-gray-900">
+                {editingId === 'new' ? '경비 등록' : '경비 수정'}
+              </h3>
+              <button
+                onClick={handleCancelEdit}
+                className="text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">경비 정보</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      경비명 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editingData.expenseName}
+                      onChange={(e) =>
+                        setEditingData({ ...editingData, expenseName: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#66bb6a]"
+                      placeholder="경비명을 입력하세요"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  월별 금액
+                </label>
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+                    const key = `m${String(month).padStart(2, '0')}` as keyof ExpenseRequest
+                    return (
+                      <div key={month}>
+                        <label className="block text-xs text-gray-600 mb-1">
+                          {month}월
+                        </label>
+                        <input
+                          type="number"
+                          value={editingData[key] || 0}
+                          onChange={(e) =>
+                            setEditingData({
+                              ...editingData,
+                              [key]: Number(e.target.value) || 0,
+                            })
+                          }
+                          className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm text-right focus:outline-none focus:ring-[#66bb6a]"
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="mt-4 p-3 bg-gray-50 rounded-md">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">합계:</span>
+                    <span className="text-lg font-bold text-gray-900">
+                      {formatAmount(
+                        (editingData.m01 || 0) +
+                        (editingData.m02 || 0) +
+                        (editingData.m03 || 0) +
+                        (editingData.m04 || 0) +
+                        (editingData.m05 || 0) +
+                        (editingData.m06 || 0) +
+                        (editingData.m07 || 0) +
+                        (editingData.m08 || 0) +
+                        (editingData.m09 || 0) +
+                        (editingData.m10 || 0) +
+                        (editingData.m11 || 0) +
+                        (editingData.m12 || 0)
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* 수정 모드일 때만 메타 정보 표시 */}
+              {editingId !== 'new' && currentExpense && (
+                <div className="border-t border-gray-200 pt-4 mt-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">등록/수정 정보</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">등록자</label>
+                      <div className="text-sm text-gray-900">{currentExpense.createdBy || '-'}</div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">등록일시</label>
+                      <div className="text-sm text-gray-900">{currentExpense.createdAt}</div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">수정자</label>
+                      <div className="text-sm text-gray-900">{currentExpense.updatedBy || '-'}</div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">수정일시</label>
+                      <div className="text-sm text-gray-900">{currentExpense.updatedAt}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end gap-2">
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 text-white rounded-md focus:outline-none"
+                style={{ backgroundColor: '#66bb6a' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 에러 알림 모달 */}
       {isErrorModalOpen && (
