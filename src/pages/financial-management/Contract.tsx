@@ -240,9 +240,13 @@ const Contract = () => {
     }
   }
 
+  // 모달 열기 상태
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
+
   // 새 항목 추가 시작
   const handleStartAdd = () => {
     setEditingId('new')
+    setCurrentContract(null)
     setEditingData({
       type: selectedTab === 'sales' ? 'S' : 'P',
       contractName: '',
@@ -265,11 +269,16 @@ const Contract = () => {
       m11: 0,
       m12: 0,
     })
+    setIsModalOpen(true)
   }
+
+  // 현재 편집 중인 계약 정보 (수정 모드에서 메타 정보 표시용)
+  const [currentContract, setCurrentContract] = useState<Contract | null>(null)
 
   // 수정 시작
   const handleStartEdit = (contract: Contract) => {
     setEditingId(contract.contractId)
+    setCurrentContract(contract)
     setEditingData({
       type: contract.type,
       contractName: contract.contractName,
@@ -292,12 +301,15 @@ const Contract = () => {
       m11: contract.m11,
       m12: contract.m12,
     })
+    setIsModalOpen(true)
   }
 
   // 편집 취소
   const handleCancelEdit = () => {
     setEditingId(null)
     setEditingData(null)
+    setCurrentContract(null)
+    setIsModalOpen(false)
   }
 
   // 저장
@@ -348,6 +360,8 @@ const Contract = () => {
       }
       setEditingId(null)
       setEditingData(null)
+      setCurrentContract(null)
+      setIsModalOpen(false)
       fetchContracts()
     } catch (error: any) {
       Swal.fire({
@@ -769,7 +783,7 @@ const Contract = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={handleStartAdd}
-            disabled={editingId !== null}
+            disabled={isModalOpen}
             className="px-4 py-2 text-white rounded-md focus:outline-none active:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ backgroundColor: '#66bb6a' }}
             onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4caf50')}
@@ -922,12 +936,6 @@ const Contract = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                   계약종료일
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                  청구규칙
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                  결제조건
-                </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   1월
                 </th>
@@ -967,369 +975,74 @@ const Contract = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                   합계
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                  등록자
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                  수정자
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '140px' }}>
-                  관리
-                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={22} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={17} className="px-4 py-8 text-center text-gray-500">
                     로딩 중...
                   </td>
                 </tr>
               ) : (
                 <>
-                  {/* 새 항목 추가 행 */}
-                  {editingId === 'new' && editingData && (
-                    <tr className="bg-blue-50">
-                      <td className="px-4 py-3"></td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="text"
-                          value={editingData.contractName}
-                          onChange={(e) =>
-                            setEditingData({ ...editingData, contractName: e.target.value })
-                          }
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
-                          placeholder="계약명"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="text"
-                          value={editingData.companyName}
-                          onChange={(e) =>
-                            setEditingData({ ...editingData, companyName: e.target.value })
-                          }
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
-                          placeholder="회사명"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="date"
-                          value={editingData.contractStart}
-                          onChange={(e) =>
-                            setEditingData({ ...editingData, contractStart: e.target.value })
-                          }
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="date"
-                          value={editingData.contractEnd}
-                          onChange={(e) =>
-                            setEditingData({ ...editingData, contractEnd: e.target.value })
-                          }
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="text"
-                          value={editingData.invoiceRule}
-                          onChange={(e) =>
-                            setEditingData({ ...editingData, invoiceRule: e.target.value })
-                          }
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
-                          placeholder="청구규칙"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="text"
-                          value={editingData.paymentTerm}
-                          onChange={(e) =>
-                            setEditingData({ ...editingData, paymentTerm: e.target.value })
-                          }
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
-                          placeholder="결제조건"
-                        />
-                      </td>
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
-                        const key = `m${String(month).padStart(2, '0')}` as keyof ContractRequest
-                        return (
-                          <td key={month} className="px-4 py-3">
-                            <input
-                              type="number"
-                              value={editingData[key] || 0}
-                              onChange={(e) =>
-                                setEditingData({
-                                  ...editingData,
-                                  [key]: Number(e.target.value) || 0,
-                                })
-                              }
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right min-w-0"
-                            />
-                          </td>
-                        )
-                      })}
-                      <td className="px-4 py-3 text-sm font-semibold text-right">
-                        {formatAmount(
-                          (editingData.m01 || 0) +
-                            (editingData.m02 || 0) +
-                            (editingData.m03 || 0) +
-                            (editingData.m04 || 0) +
-                            (editingData.m05 || 0) +
-                            (editingData.m06 || 0) +
-                            (editingData.m07 || 0) +
-                            (editingData.m08 || 0) +
-                            (editingData.m09 || 0) +
-                            (editingData.m10 || 0) +
-                            (editingData.m11 || 0) +
-                            (editingData.m12 || 0)
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">-</td>
-                      <td className="px-4 py-3 text-sm text-gray-500">-</td>
-                      <td className="px-4 py-3 text-sm" style={{ width: '140px' }}>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={handleSave}
-                            className="px-3 py-1.5 text-sm text-white rounded-md focus:outline-none active:outline-none whitespace-nowrap"
-                            style={{ backgroundColor: '#66bb6a' }}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
-                          >
-                            저장
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            className="px-3 py-1.5 text-sm text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none active:outline-none whitespace-nowrap"
-                          >
-                            취소
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-
                   {/* 데이터 행 */}
-                  {currentContracts.length === 0 && editingId !== 'new' ? (
+                  {currentContracts.length === 0 ? (
                     <tr>
-                      <td colSpan={22} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={17} className="px-4 py-8 text-center text-gray-500">
                         데이터가 없습니다.
                       </td>
                     </tr>
                   ) : (
                     currentContracts.map((contract) => {
-                      const isEditing = editingId === contract.contractId
-                      const displayData = isEditing && editingData ? editingData : contract
-
                       return (
-                        <tr key={contract.contractId} className={isEditing ? 'bg-blue-50' : 'hover:bg-gray-50'}>
-                          <td className="px-4 py-3">
-                            {!isEditing && (
-                              <input
-                                type="checkbox"
-                                checked={selectedIds.has(contract.contractId)}
-                                onChange={() => handleSelect(contract.contractId)}
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              />
-                            )}
+                        <tr 
+                          key={contract.contractId} 
+                          className="hover:bg-gray-50 cursor-pointer"
+                          onClick={() => {
+                            if (!isModalOpen) {
+                              handleStartEdit(contract)
+                            }
+                          }}
+                        >
+                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(contract.contractId)}
+                              onChange={() => handleSelect(contract.contractId)}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              onClick={(e) => e.stopPropagation()}
+                            />
                           </td>
                           <td className="px-4 py-3">
-                            {isEditing ? (
-                              <input
-                                type="text"
-                                value={displayData.contractName}
-                                onChange={(e) =>
-                                  setEditingData({
-                                    ...editingData!,
-                                    contractName: e.target.value,
-                                  })
-                                }
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
-                              />
-                            ) : (
-                              <span className="text-sm text-gray-900">{contract.contractName}</span>
-                            )}
+                            <span className="text-sm text-gray-900">{contract.contractName}</span>
                           </td>
                           <td className="px-4 py-3">
-                            {isEditing ? (
-                              <input
-                                type="text"
-                                value={displayData.companyName}
-                                onChange={(e) =>
-                                  setEditingData({
-                                    ...editingData!,
-                                    companyName: e.target.value,
-                                  })
-                                }
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
-                              />
-                            ) : (
-                              <span className="text-sm text-gray-900">{contract.companyName}</span>
-                            )}
+                            <span className="text-sm text-gray-900">{contract.companyName}</span>
                           </td>
                           <td className="px-4 py-3">
-                            {isEditing ? (
-                              <input
-                                type="date"
-                                value={displayData.contractStart}
-                                onChange={(e) =>
-                                  setEditingData({
-                                    ...editingData!,
-                                    contractStart: e.target.value,
-                                  })
-                                }
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
-                              />
-                            ) : (
-                              <span className="text-sm text-gray-900">{contract.contractStart}</span>
-                            )}
+                            <span className="text-sm text-gray-900">{contract.contractStart}</span>
                           </td>
                           <td className="px-4 py-3">
-                            {isEditing ? (
-                              <input
-                                type="date"
-                                value={displayData.contractEnd}
-                                onChange={(e) =>
-                                  setEditingData({
-                                    ...editingData!,
-                                    contractEnd: e.target.value,
-                                  })
-                                }
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
-                              />
-                            ) : (
-                              <span className="text-sm text-gray-900">{contract.contractEnd}</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            {isEditing ? (
-                              <input
-                                type="text"
-                                value={displayData.invoiceRule}
-                                onChange={(e) =>
-                                  setEditingData({
-                                    ...editingData!,
-                                    invoiceRule: e.target.value,
-                                  })
-                                }
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
-                              />
-                            ) : (
-                              <span className="text-sm text-gray-900">{contract.invoiceRule}</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            {isEditing ? (
-                              <input
-                                type="text"
-                                value={displayData.paymentTerm}
-                                onChange={(e) =>
-                                  setEditingData({
-                                    ...editingData!,
-                                    paymentTerm: e.target.value,
-                                  })
-                                }
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-w-0"
-                              />
-                            ) : (
-                              <span className="text-sm text-gray-900">{contract.paymentTerm}</span>
-                            )}
+                            <span className="text-sm text-gray-900">{contract.contractEnd}</span>
                           </td>
                           {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
-                            const key = `m${String(month).padStart(2, '0')}` as keyof ContractRequest
-                            const value = isEditing ? (displayData as ContractRequest)[key] : (contract as Contract)[key]
+                            const key = `m${String(month).padStart(2, '0')}` as keyof Contract
+                            const value = contract[key] as number
                             return (
                               <td key={month} className="px-4 py-3">
-                                {isEditing ? (
-                                  <input
-                                    type="number"
-                                    value={value || 0}
-                                    onChange={(e) =>
-                                      setEditingData({
-                                        ...editingData!,
-                                        [key]: Number(e.target.value) || 0,
-                                      })
-                                    }
-                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right min-w-0"
-                                  />
-                                ) : (
-                                  <span className={`text-sm text-right ${
-                                    (value as number) < 0 ? 'text-red-600' : (value as number) > 0 ? 'text-blue-600' : 'text-gray-900'
-                                  }`}>
-                                    {formatAmount(value as number)}
-                                  </span>
-                                )}
+                                <span className={`text-sm text-right ${
+                                  value < 0 ? 'text-red-600' : value > 0 ? 'text-blue-600' : 'text-gray-900'
+                                }`}>
+                                  {formatAmount(value)}
+                                </span>
                               </td>
                             )
                           })}
                           <td className="px-4 py-3 text-sm font-semibold text-right">
-                            {isEditing && editingData ? (
-                              (() => {
-                                const total = (editingData.m01 || 0) +
-                                  (editingData.m02 || 0) +
-                                  (editingData.m03 || 0) +
-                                  (editingData.m04 || 0) +
-                                  (editingData.m05 || 0) +
-                                  (editingData.m06 || 0) +
-                                  (editingData.m07 || 0) +
-                                  (editingData.m08 || 0) +
-                                  (editingData.m09 || 0) +
-                                  (editingData.m10 || 0) +
-                                  (editingData.m11 || 0) +
-                                  (editingData.m12 || 0)
-                                return (
-                                  <span className={total < 0 ? 'text-red-600' : total > 0 ? 'text-blue-600' : 'text-gray-900'}>
-                                    {formatAmount(total)}
-                                  </span>
-                                )
-                              })()
-                            ) : (
-                              <span className={contract.totalAmount < 0 ? 'text-red-600' : contract.totalAmount > 0 ? 'text-blue-600' : 'text-gray-900'}>
-                                {formatAmount(contract.totalAmount)}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {contract.createdBy}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {contract.updatedBy}
-                          </td>
-                          <td className="px-4 py-3 text-sm" style={{ width: '140px' }}>
-                            {isEditing ? (
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={handleSave}
-                                  className="px-3 py-1.5 text-sm text-white rounded-md focus:outline-none active:outline-none whitespace-nowrap"
-                                  style={{ backgroundColor: '#66bb6a' }}
-                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
-                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
-                                >
-                                  저장
-                                </button>
-                                <button
-                                  onClick={handleCancelEdit}
-                                  className="px-3 py-1.5 text-sm text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none active:outline-none whitespace-nowrap"
-                                >
-                                  취소
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => handleStartEdit(contract)}
-                                disabled={editingId !== null}
-                                className="px-3 py-1.5 text-sm text-white rounded-md focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                                style={{ backgroundColor: '#66bb6a' }}
-                                onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4caf50')}
-                                onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#66bb6a')}
-                              >
-                                수정
-                              </button>
-                            )}
+                            <span className={contract.totalAmount < 0 ? 'text-red-600' : contract.totalAmount > 0 ? 'text-blue-600' : 'text-gray-900'}>
+                              {formatAmount(contract.totalAmount)}
+                            </span>
                           </td>
                         </tr>
                       )
@@ -1339,7 +1052,7 @@ const Contract = () => {
                   {/* 월별 합계 행 */}
                   {!isLoading && currentContracts.length > 0 && (
                     <tr className="bg-gray-100 border-t-2 border-gray-300">
-                      <td className="px-4 py-3" colSpan={6}></td>
+                      <td className="px-4 py-3" colSpan={4}></td>
                       <td className="px-4 py-3 font-bold text-gray-900">
                         합계
                       </td>
@@ -1408,7 +1121,6 @@ const Contract = () => {
                           {formatAmount(monthlyTotals.total)}
                         </span>
                       </td>
-                      <td className="px-4 py-3" colSpan={3}></td>
                     </tr>
                   )}
                 </>
@@ -1417,6 +1129,209 @@ const Contract = () => {
           </table>
         </div>
       </div>
+
+      {/* 모달 팝업 */}
+      {isModalOpen && editingData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+              <h3 className="text-xl font-bold text-gray-900">
+                {editingId === 'new' 
+                  ? (selectedTab === 'sales' ? '매출 등록' : '매입 등록')
+                  : (selectedTab === 'sales' ? '매출 수정' : '매입 수정')}
+              </h3>
+              <button
+                onClick={handleCancelEdit}
+                className="text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">계약 정보</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      계약명 <span className="text-red-500">*</span>
+                    </label>
+                  <input
+                    type="text"
+                    value={editingData.contractName}
+                    onChange={(e) =>
+                      setEditingData({ ...editingData, contractName: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#66bb6a]"
+                    placeholder="계약명을 입력하세요"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    회사명 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editingData.companyName}
+                    onChange={(e) =>
+                      setEditingData({ ...editingData, companyName: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#66bb6a]"
+                    placeholder="회사명을 입력하세요"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    계약시작일
+                  </label>
+                  <input
+                    type="date"
+                    value={editingData.contractStart}
+                    onChange={(e) =>
+                      setEditingData({ ...editingData, contractStart: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#66bb6a]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    계약종료일
+                  </label>
+                  <input
+                    type="date"
+                    value={editingData.contractEnd}
+                    onChange={(e) =>
+                      setEditingData({ ...editingData, contractEnd: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#66bb6a]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    청구규칙
+                  </label>
+                  <input
+                    type="text"
+                    value={editingData.invoiceRule}
+                    onChange={(e) =>
+                      setEditingData({ ...editingData, invoiceRule: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#66bb6a]"
+                    placeholder="청구규칙을 입력하세요"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    결제조건
+                  </label>
+                  <input
+                    type="text"
+                    value={editingData.paymentTerm}
+                    onChange={(e) =>
+                      setEditingData({ ...editingData, paymentTerm: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#66bb6a]"
+                    placeholder="결제조건을 입력하세요"
+                  />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  월별 금액
+                </label>
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+                    const key = `m${String(month).padStart(2, '0')}` as keyof ContractRequest
+                    return (
+                      <div key={month}>
+                        <label className="block text-xs text-gray-600 mb-1">
+                          {month}월
+                        </label>
+                        <input
+                          type="number"
+                          value={editingData[key] || 0}
+                          onChange={(e) =>
+                            setEditingData({
+                              ...editingData,
+                              [key]: Number(e.target.value) || 0,
+                            })
+                          }
+                          className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm text-right focus:outline-none focus:ring-[#66bb6a]"
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="mt-4 p-3 bg-gray-50 rounded-md">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">합계:</span>
+                    <span className="text-lg font-bold text-gray-900">
+                      {formatAmount(
+                        (editingData.m01 || 0) +
+                        (editingData.m02 || 0) +
+                        (editingData.m03 || 0) +
+                        (editingData.m04 || 0) +
+                        (editingData.m05 || 0) +
+                        (editingData.m06 || 0) +
+                        (editingData.m07 || 0) +
+                        (editingData.m08 || 0) +
+                        (editingData.m09 || 0) +
+                        (editingData.m10 || 0) +
+                        (editingData.m11 || 0) +
+                        (editingData.m12 || 0)
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* 수정 모드일 때만 메타 정보 표시 */}
+              {editingId !== 'new' && currentContract && (
+                <div className="border-t border-gray-200 pt-4 mt-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">등록/수정 정보</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">등록자</label>
+                      <div className="text-sm text-gray-900">{currentContract.createdBy || '-'}</div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">등록일시</label>
+                      <div className="text-sm text-gray-900">{currentContract.createdAt}</div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">수정자</label>
+                      <div className="text-sm text-gray-900">{currentContract.updatedBy || '-'}</div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">수정일시</label>
+                      <div className="text-sm text-gray-900">{currentContract.updatedAt}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end gap-2">
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 text-white rounded-md focus:outline-none"
+                style={{ backgroundColor: '#66bb6a' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#66bb6a'}
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
