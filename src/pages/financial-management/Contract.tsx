@@ -190,7 +190,7 @@ const Contract = () => {
     return totals
   }, [contractData.purchase])
 
-  // 그래프용 월별 데이터 (매출 + 매입)
+  // 그래프용 월별 데이터 (매출 + 매입 + 마진)
   const chartData = useMemo(() => {
     const months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
     const salesValues = [
@@ -207,6 +207,7 @@ const Contract = () => {
       month,
       sales: salesValues[index],
       purchase: purchaseValues[index],
+      margin: salesValues[index] - purchaseValues[index],
     }))
   }, [salesMonthlyTotals, purchaseMonthlyTotals])
 
@@ -215,10 +216,11 @@ const Contract = () => {
     const allValues = [
       ...Object.values(salesMonthlyTotals),
       ...Object.values(purchaseMonthlyTotals),
+      ...chartData.map(item => Math.abs(item.margin)),
     ]
     const max = Math.max(...allValues.map(Math.abs))
     return max === 0 ? 1 : max * 1.1 // 여백을 위해 10% 추가
-  }, [salesMonthlyTotals, purchaseMonthlyTotals])
+  }, [salesMonthlyTotals, purchaseMonthlyTotals, chartData])
 
   // 체크박스 선택/해제
   const handleSelect = (contractId: number) => {
@@ -624,6 +626,19 @@ const Contract = () => {
               <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ef4444' }}></div>
               <span className="text-sm text-gray-700 font-medium">매입</span>
             </div>
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M2 10 L6 8 L10 12 L14 6 L18 10"
+                  stroke="#3b82f6"
+                  strokeWidth="2"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span className="text-sm text-gray-700 font-medium">마진</span>
+            </div>
           </div>
         </div>
         <div className="w-full h-80">
@@ -765,6 +780,63 @@ const Contract = () => {
               )
             })}
 
+            {/* 마진 꺽은선 그래프 */}
+            <polyline
+              points={chartData.map((item, index) => {
+                const x = 100 + (index * 76.67) + 38.33
+                // 마진이 양수면 위로, 음수면 아래로 표시
+                const marginY = 280 - ((item.margin / maxValue) * 250)
+                return `${x},${marginY}`
+              }).join(' ')}
+              fill="none"
+              stroke="#3b82f6"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity="0.9"
+              className="cursor-pointer"
+            />
+            {/* 마진 점 표시 */}
+            {chartData.map((item, index) => {
+              const x = 100 + (index * 76.67) + 38.33
+              // 마진이 양수면 위로, 음수면 아래로 표시
+              const marginY = 280 - ((item.margin / maxValue) * 250)
+              return (
+                <g key={`margin-point-${index}`}>
+                  <circle
+                    cx={x}
+                    cy={marginY}
+                    r="4"
+                    fill="#3b82f6"
+                    stroke="white"
+                    strokeWidth="2"
+                    className="cursor-pointer"
+                  >
+                    <title>
+                      {item.month} 마진: {item.margin.toLocaleString()}원
+                    </title>
+                  </circle>
+                  {/* 마진 값 표시 */}
+                  {Math.abs(item.margin) > maxValue * 0.05 && (
+                    <text
+                      x={x}
+                      y={item.margin >= 0 ? marginY - 10 : marginY + 15}
+                      textAnchor="middle"
+                      fontSize="9"
+                      fill="#3b82f6"
+                      className="font-semibold"
+                    >
+                      {Math.abs(item.margin) >= 1000000
+                        ? `${(Math.abs(item.margin) / 1000000).toFixed(1)}M`
+                        : Math.abs(item.margin) >= 1000
+                        ? `${(Math.abs(item.margin) / 1000).toFixed(0)}K`
+                        : Math.abs(item.margin)}
+                    </text>
+                  )}
+                </g>
+              )
+            })}
+
             {/* 0 기준선 */}
             <line
               x1="60"
@@ -775,6 +847,173 @@ const Contract = () => {
               strokeWidth="2"
             />
           </svg>
+        </div>
+      </div>
+
+      {/* 마진 계산 표 */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold text-gray-700">마진 계산</h3>
+          <span className="text-sm text-gray-500">( * 매출 - 매입 )</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">구분</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">1월</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">2월</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">3월</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">4월</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">5월</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">6월</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">7월</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">8월</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">9월</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">10월</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">11월</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">12월</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">합계</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              <tr>
+                <td className="px-4 py-3 text-sm font-medium text-gray-900">매출</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(salesMonthlyTotals.m01)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(salesMonthlyTotals.m02)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(salesMonthlyTotals.m03)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(salesMonthlyTotals.m04)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(salesMonthlyTotals.m05)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(salesMonthlyTotals.m06)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(salesMonthlyTotals.m07)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(salesMonthlyTotals.m08)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(salesMonthlyTotals.m09)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(salesMonthlyTotals.m10)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(salesMonthlyTotals.m11)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(salesMonthlyTotals.m12)}</td>
+                <td className="px-4 py-3 text-sm font-semibold text-right text-gray-900">
+                  {formatAmount(
+                    salesMonthlyTotals.m01 + salesMonthlyTotals.m02 + salesMonthlyTotals.m03 + salesMonthlyTotals.m04 +
+                    salesMonthlyTotals.m05 + salesMonthlyTotals.m06 + salesMonthlyTotals.m07 + salesMonthlyTotals.m08 +
+                    salesMonthlyTotals.m09 + salesMonthlyTotals.m10 + salesMonthlyTotals.m11 + salesMonthlyTotals.m12
+                  )}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 text-sm font-medium text-gray-900">매입</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(purchaseMonthlyTotals.m01)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(purchaseMonthlyTotals.m02)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(purchaseMonthlyTotals.m03)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(purchaseMonthlyTotals.m04)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(purchaseMonthlyTotals.m05)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(purchaseMonthlyTotals.m06)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(purchaseMonthlyTotals.m07)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(purchaseMonthlyTotals.m08)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(purchaseMonthlyTotals.m09)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(purchaseMonthlyTotals.m10)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(purchaseMonthlyTotals.m11)}</td>
+                <td className="px-4 py-3 text-sm text-right text-gray-900">{formatAmount(purchaseMonthlyTotals.m12)}</td>
+                <td className="px-4 py-3 text-sm font-semibold text-right text-gray-900">
+                  {formatAmount(
+                    purchaseMonthlyTotals.m01 + purchaseMonthlyTotals.m02 + purchaseMonthlyTotals.m03 + purchaseMonthlyTotals.m04 +
+                    purchaseMonthlyTotals.m05 + purchaseMonthlyTotals.m06 + purchaseMonthlyTotals.m07 + purchaseMonthlyTotals.m08 +
+                    purchaseMonthlyTotals.m09 + purchaseMonthlyTotals.m10 + purchaseMonthlyTotals.m11 + purchaseMonthlyTotals.m12
+                  )}
+                </td>
+              </tr>
+              <tr className="bg-gray-100 border-t-2 border-gray-300">
+                <td className="px-4 py-3 text-sm font-bold text-gray-900">마진</td>
+                <td className="px-4 py-3 text-sm font-bold text-right">
+                  <span className={salesMonthlyTotals.m01 - purchaseMonthlyTotals.m01 < 0 ? 'text-red-600' : salesMonthlyTotals.m01 - purchaseMonthlyTotals.m01 > 0 ? 'text-blue-600' : 'text-gray-900'}>
+                    {formatAmount(salesMonthlyTotals.m01 - purchaseMonthlyTotals.m01)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm font-bold text-right">
+                  <span className={salesMonthlyTotals.m02 - purchaseMonthlyTotals.m02 < 0 ? 'text-red-600' : salesMonthlyTotals.m02 - purchaseMonthlyTotals.m02 > 0 ? 'text-blue-600' : 'text-gray-900'}>
+                    {formatAmount(salesMonthlyTotals.m02 - purchaseMonthlyTotals.m02)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm font-bold text-right">
+                  <span className={salesMonthlyTotals.m03 - purchaseMonthlyTotals.m03 < 0 ? 'text-red-600' : salesMonthlyTotals.m03 - purchaseMonthlyTotals.m03 > 0 ? 'text-blue-600' : 'text-gray-900'}>
+                    {formatAmount(salesMonthlyTotals.m03 - purchaseMonthlyTotals.m03)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm font-bold text-right">
+                  <span className={salesMonthlyTotals.m04 - purchaseMonthlyTotals.m04 < 0 ? 'text-red-600' : salesMonthlyTotals.m04 - purchaseMonthlyTotals.m04 > 0 ? 'text-blue-600' : 'text-gray-900'}>
+                    {formatAmount(salesMonthlyTotals.m04 - purchaseMonthlyTotals.m04)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm font-bold text-right">
+                  <span className={salesMonthlyTotals.m05 - purchaseMonthlyTotals.m05 < 0 ? 'text-red-600' : salesMonthlyTotals.m05 - purchaseMonthlyTotals.m05 > 0 ? 'text-blue-600' : 'text-gray-900'}>
+                    {formatAmount(salesMonthlyTotals.m05 - purchaseMonthlyTotals.m05)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm font-bold text-right">
+                  <span className={salesMonthlyTotals.m06 - purchaseMonthlyTotals.m06 < 0 ? 'text-red-600' : salesMonthlyTotals.m06 - purchaseMonthlyTotals.m06 > 0 ? 'text-blue-600' : 'text-gray-900'}>
+                    {formatAmount(salesMonthlyTotals.m06 - purchaseMonthlyTotals.m06)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm font-bold text-right">
+                  <span className={salesMonthlyTotals.m07 - purchaseMonthlyTotals.m07 < 0 ? 'text-red-600' : salesMonthlyTotals.m07 - purchaseMonthlyTotals.m07 > 0 ? 'text-blue-600' : 'text-gray-900'}>
+                    {formatAmount(salesMonthlyTotals.m07 - purchaseMonthlyTotals.m07)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm font-bold text-right">
+                  <span className={salesMonthlyTotals.m08 - purchaseMonthlyTotals.m08 < 0 ? 'text-red-600' : salesMonthlyTotals.m08 - purchaseMonthlyTotals.m08 > 0 ? 'text-blue-600' : 'text-gray-900'}>
+                    {formatAmount(salesMonthlyTotals.m08 - purchaseMonthlyTotals.m08)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm font-bold text-right">
+                  <span className={salesMonthlyTotals.m09 - purchaseMonthlyTotals.m09 < 0 ? 'text-red-600' : salesMonthlyTotals.m09 - purchaseMonthlyTotals.m09 > 0 ? 'text-blue-600' : 'text-gray-900'}>
+                    {formatAmount(salesMonthlyTotals.m09 - purchaseMonthlyTotals.m09)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm font-bold text-right">
+                  <span className={salesMonthlyTotals.m10 - purchaseMonthlyTotals.m10 < 0 ? 'text-red-600' : salesMonthlyTotals.m10 - purchaseMonthlyTotals.m10 > 0 ? 'text-blue-600' : 'text-gray-900'}>
+                    {formatAmount(salesMonthlyTotals.m10 - purchaseMonthlyTotals.m10)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm font-bold text-right">
+                  <span className={salesMonthlyTotals.m11 - purchaseMonthlyTotals.m11 < 0 ? 'text-red-600' : salesMonthlyTotals.m11 - purchaseMonthlyTotals.m11 > 0 ? 'text-blue-600' : 'text-gray-900'}>
+                    {formatAmount(salesMonthlyTotals.m11 - purchaseMonthlyTotals.m11)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm font-bold text-right">
+                  <span className={salesMonthlyTotals.m12 - purchaseMonthlyTotals.m12 < 0 ? 'text-red-600' : salesMonthlyTotals.m12 - purchaseMonthlyTotals.m12 > 0 ? 'text-blue-600' : 'text-gray-900'}>
+                    {formatAmount(salesMonthlyTotals.m12 - purchaseMonthlyTotals.m12)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm font-bold text-right">
+                  <span className={
+                    (salesMonthlyTotals.m01 + salesMonthlyTotals.m02 + salesMonthlyTotals.m03 + salesMonthlyTotals.m04 +
+                     salesMonthlyTotals.m05 + salesMonthlyTotals.m06 + salesMonthlyTotals.m07 + salesMonthlyTotals.m08 +
+                     salesMonthlyTotals.m09 + salesMonthlyTotals.m10 + salesMonthlyTotals.m11 + salesMonthlyTotals.m12) -
+                    (purchaseMonthlyTotals.m01 + purchaseMonthlyTotals.m02 + purchaseMonthlyTotals.m03 + purchaseMonthlyTotals.m04 +
+                     purchaseMonthlyTotals.m05 + purchaseMonthlyTotals.m06 + purchaseMonthlyTotals.m07 + purchaseMonthlyTotals.m08 +
+                     purchaseMonthlyTotals.m09 + purchaseMonthlyTotals.m10 + purchaseMonthlyTotals.m11 + purchaseMonthlyTotals.m12) < 0
+                      ? 'text-red-600'
+                      : (salesMonthlyTotals.m01 + salesMonthlyTotals.m02 + salesMonthlyTotals.m03 + salesMonthlyTotals.m04 +
+                         salesMonthlyTotals.m05 + salesMonthlyTotals.m06 + salesMonthlyTotals.m07 + salesMonthlyTotals.m08 +
+                         salesMonthlyTotals.m09 + salesMonthlyTotals.m10 + salesMonthlyTotals.m11 + salesMonthlyTotals.m12) -
+                        (purchaseMonthlyTotals.m01 + purchaseMonthlyTotals.m02 + purchaseMonthlyTotals.m03 + purchaseMonthlyTotals.m04 +
+                         purchaseMonthlyTotals.m05 + purchaseMonthlyTotals.m06 + purchaseMonthlyTotals.m07 + purchaseMonthlyTotals.m08 +
+                         purchaseMonthlyTotals.m09 + purchaseMonthlyTotals.m10 + purchaseMonthlyTotals.m11 + purchaseMonthlyTotals.m12) > 0
+                        ? 'text-blue-600'
+                        : 'text-gray-900'
+                  }>
+                    {formatAmount(
+                      (salesMonthlyTotals.m01 + salesMonthlyTotals.m02 + salesMonthlyTotals.m03 + salesMonthlyTotals.m04 +
+                       salesMonthlyTotals.m05 + salesMonthlyTotals.m06 + salesMonthlyTotals.m07 + salesMonthlyTotals.m08 +
+                       salesMonthlyTotals.m09 + salesMonthlyTotals.m10 + salesMonthlyTotals.m11 + salesMonthlyTotals.m12) -
+                      (purchaseMonthlyTotals.m01 + purchaseMonthlyTotals.m02 + purchaseMonthlyTotals.m03 + purchaseMonthlyTotals.m04 +
+                       purchaseMonthlyTotals.m05 + purchaseMonthlyTotals.m06 + purchaseMonthlyTotals.m07 + purchaseMonthlyTotals.m08 +
+                       purchaseMonthlyTotals.m09 + purchaseMonthlyTotals.m10 + purchaseMonthlyTotals.m11 + purchaseMonthlyTotals.m12)
+                    )}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
